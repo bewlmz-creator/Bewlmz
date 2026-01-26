@@ -19,7 +19,8 @@ import {
   Link as LinkIcon,
   Eye,
   Maximize2,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -65,6 +66,14 @@ const AdminDashboard: React.FC = () => {
     setOrders(updatedOrders);
     saveToStorage('vault_orders', updatedOrders);
     alert('Order Verified! Customer can now download.');
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    if (window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+      const updatedOrders = orders.filter(o => o.id !== orderId);
+      setOrders(updatedOrders);
+      saveToStorage('vault_orders', updatedOrders);
+    }
   };
 
   const handleProductSave = () => {
@@ -176,7 +185,7 @@ const AdminDashboard: React.FC = () => {
             {orders.length === 0 ? <p className="text-slate-400 py-10">No orders yet.</p> : (
               <div className="grid gap-6">
                 {orders.map((o) => (
-                  <div key={o.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
+                  <div key={o.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-shadow relative">
                     <div className="flex-grow">
                       <div className="flex items-center gap-3 mb-2">
                         <p className="font-black text-xl md:text-2xl uppercase tracking-tighter text-slate-900">{o.name}</p>
@@ -186,6 +195,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="mt-3 flex items-center gap-4">
                         <span className="text-indigo-600 font-[1000] text-xl">₹{o.amount}</span>
                         <span className="text-[10px] font-black uppercase text-slate-300 bg-slate-50 px-2 py-1 rounded border border-slate-100">{o.product}</span>
+                        <span className="text-[9px] font-bold text-slate-300">ID: {o.id}</span>
                       </div>
                     </div>
 
@@ -221,14 +231,23 @@ const AdminDashboard: React.FC = () => {
                             Already Verified
                           </div>
                         )}
-                        {o.proofImage && (
+                        <div className="flex items-center gap-2 w-full">
+                          {o.proofImage && (
+                            <button 
+                              onClick={() => setViewingProof(o.proofImage)}
+                              className="flex-grow text-[10px] font-black uppercase text-indigo-600 flex items-center justify-center gap-1 hover:underline py-2"
+                            >
+                              <Eye className="w-3 h-3" /> Check Proof
+                            </button>
+                          )}
                           <button 
-                            onClick={() => setViewingProof(o.proofImage)}
-                            className="text-[10px] font-black uppercase text-indigo-600 flex items-center justify-center gap-1 hover:underline"
+                            onClick={() => handleDeleteOrder(o.id)}
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="Delete Order"
                           >
-                            <Eye className="w-3 h-3" /> Check Screenshot
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
