@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FEATURED_PRODUCTS, HERO_BANNER, TEXT_SLIDES } from '../constants';
 import { Product } from '../types';
-import { GoogleGenAI } from "@google/genai";
 import { 
   BarChart3, 
   Users, 
@@ -26,8 +25,7 @@ import {
   AlertCircle,
   QrCode as QrIcon,
   Loader2,
-  User as UserIcon,
-  Sparkles
+  User as UserIcon
 } from 'lucide-react';
 
 interface Order {
@@ -55,7 +53,6 @@ const AdminDashboard: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProof, setViewingProof] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -89,40 +86,6 @@ const AdminDashboard: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('adminLoggedIn');
     navigate('/');
-  };
-
-  const handleAiGenerateDescription = async () => {
-    if (!editingProduct?.name) {
-      alert("Please enter a product name first.");
-      return;
-    }
-
-    setIsAiGenerating(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Write a short, high-converting Hindi tagline (under 10 words) and a detailed English product description for a digital business course named "${editingProduct.name}". The tagline should be catch like "Is idea se life badal jayegi". Output should be just the tagline, a newline, and then the long description.`,
-      });
-
-      const text = response.text;
-      if (text) {
-        const lines = text.split('\n');
-        const tagline = lines[0].trim().replace(/^"(.*)"$/, '$1'); // Remove quotes if present
-        const longDesc = lines.slice(1).join('\n').trim();
-        
-        setEditingProduct(prev => prev ? ({
-          ...prev,
-          description: tagline || prev.description,
-          longDescription: longDesc || prev.longDescription
-        }) : null);
-      }
-    } catch (error) {
-      console.error("AI Generation Error:", error);
-      alert("Could not connect to AI. Check if API_KEY is set in Netlify environment variables.");
-    } finally {
-      setIsAiGenerating(false);
-    }
   };
 
   const deleteOrder = (id: string) => {
@@ -607,19 +570,8 @@ const AdminDashboard: React.FC = () => {
                     </div>
                  </div>
 
-                 <div className="space-y-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-200">
-                    <div className="flex items-center justify-between">
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Hindi Tagline</label>
-                       <button 
-                         type="button"
-                         onClick={handleAiGenerateDescription}
-                         disabled={isAiGenerating}
-                         className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase transition-all active:scale-95 disabled:opacity-50"
-                       >
-                         {isAiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                         {isAiGenerating ? 'Generating...' : 'AI Generate'}
-                       </button>
-                    </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Hindi Tagline</label>
                     <input 
                       type="text" 
                       value={editingProduct.description} 
@@ -627,19 +579,8 @@ const AdminDashboard: React.FC = () => {
                         const val = e.target.value;
                         setEditingProduct(prev => prev ? ({ ...prev, description: val }) : null);
                       }} 
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none" 
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none" 
                       required 
-                    />
-                    
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 mt-2 block">Long Description (English)</label>
-                    <textarea 
-                      value={editingProduct.longDescription || ''} 
-                      onChange={e => {
-                        const val = e.target.value;
-                        setEditingProduct(prev => prev ? ({ ...prev, longDescription: val }) : null);
-                      }} 
-                      rows={5}
-                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl font-medium focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                     />
                  </div>
 
