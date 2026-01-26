@@ -14,29 +14,26 @@ interface Props {
 
 const Home: React.FC<Props> = ({ addToCart }) => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>(FEATURED_PRODUCTS);
-  const [banner, setBanner] = useState(HERO_BANNER);
+  
+  // Initialize state directly from localStorage if available to prevent flicker
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('vault_products');
+    return saved ? JSON.parse(saved) : FEATURED_PRODUCTS;
+  });
+
+  const [banner, setBanner] = useState(() => {
+    return localStorage.getItem('vault_banner') || HERO_BANNER;
+  });
 
   useEffect(() => {
     const loadSiteData = () => {
-      // Load Products
       const savedProducts = localStorage.getItem('vault_products');
-      if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
-      } else {
-        setProducts(FEATURED_PRODUCTS);
-      }
+      if (savedProducts) setProducts(JSON.parse(savedProducts));
 
-      // Load Banner
       const savedBanner = localStorage.getItem('vault_banner');
-      if (savedBanner) {
-        setBanner(savedBanner);
-      } else {
-        setBanner(HERO_BANNER);
-      }
+      if (savedBanner) setBanner(savedBanner);
     };
 
-    loadSiteData();
     window.addEventListener('storage', loadSiteData);
     return () => window.removeEventListener('storage', loadSiteData);
   }, []);
@@ -48,18 +45,15 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-gray-50/50 min-h-screen flex flex-col">
-      {/* 1. HERO BANNER - FULL IMAGE BACKGROUND */}
+      {/* 1. HERO BANNER - FIXED 1200x500 Aspect Ratio */}
       <section className="relative w-full flex justify-center px-1 sm:px-4 py-2 md:py-8">
-        <div className="max-w-[1200px] w-full aspect-[12/6] md:aspect-[12/5] relative rounded-[1rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-slate-200 group bg-slate-900">
-          
-          {/* Background Image - FULL SIZE */}
+        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-slate-200 group bg-slate-900">
           <div className="absolute inset-0 z-0">
             <img 
               src={banner} 
               alt="Hero Banner"
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
             />
-            {/* Subtle Gradient for depth */}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950/20 to-transparent z-10"></div>
           </div>
         </div>
@@ -86,7 +80,7 @@ const Home: React.FC<Props> = ({ addToCart }) => {
         </div>
       </section>
 
-      {/* 4. TRUST FOOTER - UPDATED COLOR AND TEXT */}
+      {/* 4. TRUST FOOTER */}
       <div className="py-4 md:py-24 px-4">
         <div className="max-w-5xl mx-auto rounded-[1rem] md:rounded-[4rem] p-6 md:p-24 bg-white text-slate-900 shadow-2xl border border-slate-100 relative overflow-hidden flex flex-col items-center text-center gap-6 md:gap-14">
           <div className="space-y-3 md:space-y-6 relative z-10">
@@ -102,7 +96,6 @@ const Home: React.FC<Props> = ({ addToCart }) => {
             <BarChart3 className="w-4 h-4 md:w-10 md:h-10 text-blue-400" />
             Contact Support
           </Link>
-          {/* Subtle design element */}
           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
           <div className="absolute -top-24 -left-24 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-50"></div>
         </div>

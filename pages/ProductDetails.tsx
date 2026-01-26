@@ -3,24 +3,33 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { ShoppingCart, Star, ArrowLeft, ShieldCheck, Zap, Download, TrendingUp, Package, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, TrendingUp, Package, CheckCircle2 } from 'lucide-react';
 
 interface Props { addToCart: (product: Product) => void; }
 
 const ProductDetails: React.FC<Props> = ({ addToCart }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [product, setProduct] = useState<Product | undefined>(undefined);
+  
+  const [product, setProduct] = useState<Product | undefined>(() => {
+    const saved = localStorage.getItem('vault_products');
+    if (saved) {
+      const parsed = JSON.parse(saved) as Product[];
+      return parsed.find(p => p.id === id);
+    }
+    return FEATURED_PRODUCTS.find(p => p.id === id);
+  });
 
   useEffect(() => {
-    // Try to load from local storage first (admin changes)
-    const savedProducts = localStorage.getItem('vault_products');
-    if (savedProducts) {
-      const parsed = JSON.parse(savedProducts) as Product[];
-      setProduct(parsed.find(p => p.id === id));
-    } else {
-      setProduct(FEATURED_PRODUCTS.find(p => p.id === id));
-    }
+    const updateProduct = () => {
+      const savedProducts = localStorage.getItem('vault_products');
+      if (savedProducts) {
+        const parsed = JSON.parse(savedProducts) as Product[];
+        setProduct(parsed.find(p => p.id === id));
+      }
+    };
+    window.addEventListener('storage', updateProduct);
+    return () => window.removeEventListener('storage', updateProduct);
   }, [id]);
 
   if (!product) {
@@ -61,7 +70,6 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-24">
-          {/* Left Column: Image */}
           <div className="relative">
             <div className="lg:sticky lg:top-32">
               <div className="rounded-[4.5rem] md:rounded-[6.5rem] overflow-hidden relative aspect-[2/3] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.35)] hover:shadow-indigo-500/20 transition-all duration-700 bg-slate-50 border border-slate-100">
@@ -90,7 +98,6 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
             </div>
           </div>
 
-          {/* Right Column: Title & Price - Fully Centered */}
           <div className="flex flex-col pt-6 md:pt-14 space-y-12 md:space-y-24 items-center">
             <div className="space-y-6 md:space-y-12 text-center">
               <h1 className="text-5xl md:text-[130px] font-[1000] text-slate-900 leading-[0.8] tracking-tighter uppercase">
@@ -111,7 +118,6 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                 </div>
               </div>
 
-              {/* Features Section - Styled to match image labels */}
               <div className="w-full space-y-5 md:space-y-12">
                 {product.features?.map((feature, idx) => (
                   <div key={idx} className="flex items-center justify-center space-x-6 md:space-x-12 py-6 md:py-12 border-b border-slate-200 last:border-0">
