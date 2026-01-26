@@ -1,8 +1,8 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
 import { Link } from 'react-router-dom';
-import { Star, Heart, Zap } from 'lucide-react';
+import { Star, Heart, Zap, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
 interface Props {
   product: Product;
@@ -11,6 +11,7 @@ interface Props {
 }
 
 const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
+  const [imageError, setImageError] = useState(false);
   const originalPrice = Math.round(product.price * 2.5);
   const discount = 60;
   
@@ -35,12 +36,23 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
 
       {/* Product Image - Aspect 2:3 (800x1200) */}
       <div className="p-1.5 md:p-3">
-        <Link to={`/product/${product.id}`} className="block relative aspect-[2/3] overflow-hidden bg-gray-50 rounded-[0.75rem] md:rounded-[1.5rem]">
-          <img 
-            src={product.image} 
-            alt={product.name} 
-            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-          />
+        <Link to={`/product/${product.id}`} className="block relative aspect-[2/3] overflow-hidden bg-slate-50 rounded-[0.75rem] md:rounded-[1.5rem] flex items-center justify-center">
+          {product.image && !imageError ? (
+            <img 
+              src={product.image} 
+              alt={product.name} 
+              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              loading="lazy"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+             <div className="flex flex-col items-center gap-2 text-slate-300">
+               <ImageIcon className="w-8 h-8 md:w-12 md:h-12" />
+               <span className="text-[6px] md:text-[8px] font-black uppercase tracking-widest text-slate-400 px-4 text-center">Image missing or invalid URL</span>
+             </div>
+          )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
         </Link>
       </div>
@@ -66,7 +78,6 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
             <span className="text-[8px] md:text-base text-gray-300 line-through font-bold">₹{originalPrice}</span>
           </div>
 
-          {/* Direct Buy Button Only */}
           <div className="w-full">
             <button 
               onClick={() => onBuyNow(product)}
