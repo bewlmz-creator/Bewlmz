@@ -15,7 +15,7 @@ interface Props {
 const Home: React.FC<Props> = ({ addToCart }) => {
   const navigate = useNavigate();
   
-  // Initialize state directly from localStorage if available to prevent flicker
+  // Use state with initial values from localStorage to prevent "simple" images showing first
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('vault_products');
     return saved ? JSON.parse(saved) : FEATURED_PRODUCTS;
@@ -34,7 +34,11 @@ const Home: React.FC<Props> = ({ addToCart }) => {
       if (savedBanner) setBanner(savedBanner);
     };
 
+    // Listen for storage changes from other tabs/admin panel
     window.addEventListener('storage', loadSiteData);
+    // Initial check
+    loadSiteData();
+    
     return () => window.removeEventListener('storage', loadSiteData);
   }, []);
 
@@ -45,7 +49,7 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-gray-50/50 min-h-screen flex flex-col">
-      {/* 1. HERO BANNER - FIXED 1200x500 Aspect Ratio */}
+      {/* 1. HERO BANNER - EXACT 1200x500 (12/5 Aspect Ratio) */}
       <section className="relative w-full flex justify-center px-1 sm:px-4 py-2 md:py-8">
         <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1rem] md:rounded-[3.5rem] overflow-hidden shadow-2xl border border-slate-200 group bg-slate-900">
           <div className="absolute inset-0 z-0">

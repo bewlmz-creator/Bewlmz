@@ -15,7 +15,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     name: 'Plan A',
     price: 999.00,
     description: 'इस एक Idea से आपकी पूरी जिंदगी बदल जाएगी..!!',
-    longDescription: 'Plan A is a specialized starter course focusing on a high-growth single business model. Perfect for beginners, this course takes you through 7 detailed episodes that explain everything from initial setup to generating your first 1 Lakh per month.',
+    longDescription: 'Plan A is a specialized starter course focusing on a high-growth single business model. Perfect for beginners, this course takes you through 7 detailed episodes.',
     features: [
       'Total Episode : 7',
       "No of Idea's : 1",
@@ -30,7 +30,7 @@ export const FEATURED_PRODUCTS: Product[] = [
     name: 'Plan B',
     price: 299.00,
     description: 'इस एक Idea से आपकी पूरी जिंदगी बदल जाएगी..!!',
-    longDescription: 'Plan B is our most powerful success bundle. It contains 3 recent, high-potential business ideas currently dominating the digital space. With over 12 episodes and a commitment of just 2 hours per day, this is designed for those aiming for 3 Lakh/Month.',
+    longDescription: 'Plan B is our most powerful success bundle. It contains 3 recent, high-potential business ideas currently dominating the digital space.',
     features: [
       'Total Episode : 12 +',
       "No of Idea's : 3 (Recent)",
@@ -41,5 +41,3 @@ export const FEATURED_PRODUCTS: Product[] = [
     downloadUrl: '#'
   }
 ];
-
-export const NEW_ARRIVALS: Product[] = [];
