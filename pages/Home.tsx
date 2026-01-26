@@ -45,21 +45,18 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-gray-50/50 min-h-screen flex flex-col">
-      {/* 1. HERO BANNER - FIXED 1200x500 (12/5 aspect ratio) */}
+      {/* 1. HERO BANNER - EXACT 1200x500 */}
       <section className="relative w-full flex justify-center px-2 py-4 md:py-8">
-        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1rem] md:rounded-[3rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
+        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-2xl md:rounded-[3rem] overflow-hidden shadow-xl border border-slate-200 bg-slate-100">
           <img 
             src={banner} 
             alt="Hero Banner"
             className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = HERO_BANNER;
-            }}
           />
         </div>
       </section>
 
-      {/* 2. 3 TEXT SLIDERS */}
+      {/* 2. SLIDERS (3 TEXT SLIDES) */}
       <div className="space-y-0.5">
         <TextSlider />
         <FakePurchaseSlider />
@@ -70,25 +67,25 @@ const Home: React.FC<Props> = ({ addToCart }) => {
         <div className="flex flex-col items-center text-center mb-10 border-b border-gray-100 pb-10">
            <h2 className="text-xs md:text-base font-black text-indigo-600 uppercase tracking-widest mb-4">bewlmz Marketplace</h2>
            <p className="text-xl md:text-5xl font-black text-gray-900 tracking-tighter uppercase leading-tight max-w-4xl">
-             Start Your First Online Business
+             Launch Your Business Today
            </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-4xl mx-auto">
           {products.map(product => (
             <ProductCard key={product.id} product={product} onAdd={addToCart} onBuyNow={handleBuyNow} />
           ))}
         </div>
       </section>
 
-      {/* 4. FOOTER */}
+      {/* 4. FOOTER CALL TO ACTION */}
       <div className="py-12 px-4">
         <div className="max-w-5xl mx-auto rounded-[2rem] p-10 bg-white text-center shadow-lg border border-slate-100 flex flex-col items-center gap-6">
           <h3 className="text-3xl md:text-5xl font-black text-slate-900 uppercase">
-            सफलता की ओर कदम बढ़ाएं
+            Start Your Journey
           </h3>
           <Link 
             to="/contact" 
-            className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl"
+            className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl active:scale-95 transition-transform"
           >
             Contact Support
           </Link>
