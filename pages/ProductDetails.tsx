@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { ShoppingCart, ArrowLeft, TrendingUp, Package, CheckCircle2 } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, TrendingUp, Package, CheckCircle2, Zap } from 'lucide-react';
 
 interface Props { addToCart: (product: Product) => void; }
 
@@ -111,7 +111,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
             <div className="bg-slate-50 p-10 md:p-24 rounded-[3.5rem] md:rounded-[7rem] w-full space-y-10 md:space-y-20 shadow-inner border border-slate-100 text-center flex flex-col items-center">
               <div className="flex flex-col items-center justify-center gap-4 text-center">
-                <span className="text-[12px] md:text-2xl font-black text-slate-400 uppercase tracking-[0.2em]">Enrollment Fee</span>
+                <span className="text-[12px] md:text-2xl font-black text-slate-400 uppercase tracking-[0.2em]">One-Time Fee</span>
                 <div className="flex flex-col items-center gap-2 md:gap-14">
                   <span className="text-6xl md:text-[150px] font-[1000] text-indigo-600 tracking-tighter leading-none">₹{product.price.toFixed(0)}</span>
                   <span className="text-3xl md:text-6xl text-slate-300 line-through font-bold">₹{originalPrice}</span>
@@ -136,8 +136,8 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                   onClick={handleBuyNow}
                   className="w-full bg-indigo-600 hover:bg-slate-900 text-white py-7 md:py-16 rounded-[2.5rem] md:rounded-[5rem] text-xl md:text-[64px] font-[1000] transition-all shadow-[0_40px_80px_-20px_rgba(79,70,229,0.4)] active:scale-[0.98] flex items-center justify-center space-x-4 md:space-x-12 group"
                 >
-                  <ShoppingCart className="w-10 h-10 md:w-20 md:h-20 group-hover:animate-bounce" />
-                  <span>ENROLL NOW</span>
+                  <Zap className="w-10 h-10 md:w-20 md:h-20 text-amber-400 fill-current group-hover:animate-pulse" />
+                  <span>BUY NOW</span>
                 </button>
               </div>
             </div>
