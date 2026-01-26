@@ -67,7 +67,7 @@ const MyDownloads: React.FC = () => {
              <span className="text-xs font-black text-green-700 uppercase tracking-widest">Verified Vault Access</span>
           </div>
           <h1 className="text-4xl md:text-7xl font-[1000] text-slate-900 uppercase tracking-tighter leading-none mb-4">My <span className="text-indigo-600">Downloads</span></h1>
-          <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-sm italic">Access your premium business guides below.</p>
+          <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-sm italic">Access your business guides below.</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16">

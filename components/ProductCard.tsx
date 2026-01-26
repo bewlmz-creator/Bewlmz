@@ -33,7 +33,7 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
         <Heart className="w-3 h-3 md:w-5 md:h-5" />
       </button>
 
-      {/* Product Image - Aspect 2:3 (800x1200) with Inner Frame */}
+      {/* Product Image - Aspect 2:3 (800x1200) */}
       <div className="p-1.5 md:p-3">
         <Link to={`/product/${product.id}`} className="block relative aspect-[2/3] overflow-hidden bg-gray-50 rounded-[0.75rem] md:rounded-[1.5rem]">
           <img 
@@ -42,9 +42,6 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
             className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
-          <div className="absolute bottom-1.5 right-1.5 md:bottom-3 md:right-3 bg-white/20 backdrop-blur-md px-1.5 py-0.5 md:px-3 md:py-1.5 rounded-full border border-white/30">
-            <span className="text-[4px] md:text-[8px] font-black text-white uppercase tracking-widest">Premium</span>
-          </div>
         </Link>
       </div>
 
@@ -69,7 +66,7 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
             <span className="text-[8px] md:text-base text-gray-300 line-through font-bold">₹{originalPrice}</span>
           </div>
 
-          {/* Direct Buy Button Only - More compact height */}
+          {/* Direct Buy Button Only */}
           <div className="w-full">
             <button 
               onClick={() => onBuyNow(product)}

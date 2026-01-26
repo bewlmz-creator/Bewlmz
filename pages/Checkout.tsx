@@ -32,7 +32,7 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
         <div className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-gray-100">
           <ShoppingBag className="w-12 h-12 md:w-16 md:h-16 text-gray-300 mx-auto mb-6" />
           <h2 className="text-2xl md:text-3xl font-bold mb-4">Your vault is empty</h2>
-          <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm md:text-base">Explore our marketplace and fill it with premium digital products.</p>
+          <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm md:text-base">Explore our marketplace and fill it with digital products.</p>
           <Link to="/" className="inline-block bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors w-full sm:w-auto">
             Start Shopping
           </Link>
