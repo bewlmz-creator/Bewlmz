@@ -10,49 +10,23 @@ import {
   CheckCircle2, 
   LogOut, 
   Trash2,
-  ExternalLink,
-  Settings,
   Edit,
   Save,
   X,
-  Image as ImageIcon,
-  Plus,
-  Upload,
   Layout,
-  Type,
   Link as LinkIcon,
-  Video,
-  AlertCircle,
-  QrCode as QrIcon,
-  Loader2,
-  User as UserIcon
+  Globe,
+  HelpCircle
 } from 'lucide-react';
-
-interface Order {
-  id: string;
-  name: string;
-  email: string;
-  product: string;
-  amount: number;
-  date: string;
-  status: 'pending' | 'verified';
-  proofImage?: string;
-}
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [siteBanner, setSiteBanner] = useState(HERO_BANNER);
-  const [siteQrCode, setSiteQrCode] = useState<string | null>(null);
-  const [siteSlides, setSiteSlides] = useState<string[]>(TEXT_SLIDES);
-  const [recipientName, setRecipientName] = useState('Ranjit Rishidev');
-  const [paymentInstruction, setPaymentInstruction] = useState('ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद \'Proceed Payment\' बटन दबाएं।');
   
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'config'>('orders');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [viewingProof, setViewingProof] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -61,286 +35,155 @@ const AdminDashboard: React.FC = () => {
       return;
     }
 
-    const savedOrders = JSON.parse(localStorage.getItem('vault_orders') || '[]');
-    setOrders(savedOrders);
-
-    const savedProducts = JSON.parse(localStorage.getItem('vault_products') || JSON.stringify(FEATURED_PRODUCTS));
-    setProducts(savedProducts);
-
-    const savedBanner = localStorage.getItem('vault_banner') || HERO_BANNER;
-    setSiteBanner(savedBanner);
-
-    const savedQr = localStorage.getItem('vault_qr_code');
-    setSiteQrCode(savedQr);
-
-    const savedSlides = JSON.parse(localStorage.getItem('vault_slides') || JSON.stringify(TEXT_SLIDES));
-    setSiteSlides(savedSlides);
-
-    const savedRecipient = localStorage.getItem('vault_recipient_name');
-    if (savedRecipient) setRecipientName(savedRecipient);
-
-    const savedInstruction = localStorage.getItem('vault_payment_instruction');
-    if (savedInstruction) setPaymentInstruction(savedInstruction);
+    setOrders(JSON.parse(localStorage.getItem('vault_orders') || '[]'));
+    setProducts(JSON.parse(localStorage.getItem('vault_products') || JSON.stringify(FEATURED_PRODUCTS)));
+    setSiteBanner(localStorage.getItem('vault_banner') || HERO_BANNER);
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn');
-    navigate('/');
-  };
-
-  const deleteOrder = (id: string) => {
-    if (!window.confirm('Delete this order?')) return;
-    const updated = orders.filter(o => o.id !== id);
-    setOrders(updated);
-    localStorage.setItem('vault_orders', JSON.stringify(updated));
+  const saveToStorage = (key: string, value: any) => {
+    localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
     window.dispatchEvent(new Event('storage'));
-  };
-
-  const markVerified = (id: string) => {
-    const updated = orders.map(o => o.id === id ? { ...o, status: 'verified' as const } : o);
-    setOrders(updated);
-    localStorage.setItem('vault_orders', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-    alert('Payment Verified!');
-  };
-
-  const saveSiteConfig = () => {
-    localStorage.setItem('vault_banner', siteBanner);
-    localStorage.setItem('vault_slides', JSON.stringify(siteSlides));
-    localStorage.setItem('vault_recipient_name', recipientName);
-    localStorage.setItem('vault_payment_instruction', paymentInstruction);
-    if (siteQrCode) {
-      localStorage.setItem('vault_qr_code', siteQrCode);
-    }
-    alert('Site Configuration Updated Successfully!');
-    window.dispatchEvent(new Event('storage'));
-  };
-
-  const updateSlide = (index: number, value: string) => {
-    const newSlides = [...siteSlides];
-    newSlides[index] = value;
-    setSiteSlides(newSlides);
-  };
-
-  const handleAddNewProduct = () => {
-    const newProd: Product = {
-      id: `prod-${Date.now()}`,
-      name: 'New Product',
-      price: 499,
-      description: 'इस Idea से आपकी जिंदगी बदल जाएगी..!!',
-      longDescription: 'Full product details here...',
-      features: ['Total Episode : 5', "No of Idea's : 1"],
-      image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?auto=format&fit=crop&q=80&w=800&h=1200',
-      category: 'course',
-      downloadUrl: ''
-    };
-    setEditingProduct(newProd);
-  };
-
-  const deleteProduct = (id: string) => {
-    if (!window.confirm('Delete product?')) return;
-    const updated = products.filter(p => p.id !== id);
-    setProducts(updated);
-    localStorage.setItem('vault_products', JSON.stringify(updated));
-    window.dispatchEvent(new Event('storage'));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setEditingProduct(prev => prev ? ({ ...prev, image: base64String }) : null);
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSiteBanner(reader.result as string);
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setSiteQrCode(reader.result as string);
-      setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct) return;
-
-    let updated;
-    const exists = products.find(p => p.id === editingProduct.id);
-    if (exists) {
-      updated = products.map(p => p.id === editingProduct.id ? editingProduct : p);
-    } else {
-      updated = [...products, editingProduct];
-    }
+    const updated = products.find(p => p.id === editingProduct.id) 
+      ? products.map(p => p.id === editingProduct.id ? editingProduct : p)
+      : [...products, editingProduct];
     
-    setProducts(updated);
-    localStorage.setItem('vault_products', JSON.stringify(updated));
+    setProducts(updated.slice(0, 2)); // Limit to 2 products
+    saveToStorage('vault_products', updated.slice(0, 2));
     setEditingProduct(null);
-    alert('Product Saved!');
-    window.dispatchEvent(new Event('storage'));
+    alert('Product Updated Globally!');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - Same as before */}
-      <aside className="w-20 md:w-80 bg-[#001E3C] text-white flex flex-col shrink-0 border-r border-white/5">
-        <div className="p-4 md:p-8 flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-xl"><BarChart3 className="w-6 h-6" /></div>
-          <span className="hidden md:block text-2xl font-[1000] uppercase italic tracking-tighter">Admin bewlmz</span>
-        </div>
-        <nav className="flex-grow p-2 md:p-6 space-y-2">
-          <button onClick={() => setActiveTab('orders')} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === 'orders' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Users className="w-6 h-6" /><span className="hidden md:block font-black uppercase text-[12px]">Orders</span>
+    <div className="min-h-screen bg-slate-50 flex font-sans">
+      {/* Sidebar */}
+      <aside className="w-20 md:w-64 bg-[#001E3C] text-white flex flex-col shrink-0">
+        <div className="p-6 text-xl font-black italic uppercase tracking-tighter">Admin</div>
+        <nav className="flex-grow p-4 space-y-2">
+          <button onClick={() => setActiveTab('orders')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'orders' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
+            <Users className="w-5 h-5" /><span className="hidden md:block text-xs font-bold uppercase">Orders</span>
           </button>
-          <button onClick={() => setActiveTab('products')} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === 'products' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Package className="w-6 h-6" /><span className="hidden md:block font-black uppercase text-[12px]">Products</span>
+          <button onClick={() => setActiveTab('products')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'products' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
+            <Package className="w-5 h-5" /><span className="hidden md:block text-xs font-bold uppercase">Products</span>
           </button>
-          <button onClick={() => setActiveTab('config')} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${activeTab === 'config' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Layout className="w-6 h-6" /><span className="hidden md:block font-black uppercase text-[12px]">Site Config</span>
+          <button onClick={() => setActiveTab('config')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'config' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
+            <Layout className="w-5 h-5" /><span className="hidden md:block text-xs font-bold uppercase">Site Banner</span>
           </button>
         </nav>
-        <div className="p-4 md:p-8">
-          <button onClick={handleLogout} className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all">
-            <LogOut className="w-6 h-6" /><span className="hidden md:block font-black uppercase text-[12px]">Logout</span>
-          </button>
-        </div>
+        <button onClick={() => { localStorage.removeItem('adminLoggedIn'); navigate('/'); }} className="p-8 text-red-400 font-bold uppercase text-xs">Logout</button>
       </aside>
 
-      <main className="flex-grow p-4 md:p-12 overflow-y-auto">
-        <header className="mb-12">
-           <h1 className="text-3xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter">{activeTab.toUpperCase()}</h1>
-        </header>
+      <main className="flex-grow p-8 overflow-y-auto">
+        <div className="mb-10 bg-blue-600 rounded-[2rem] p-8 text-white shadow-xl flex items-center gap-6">
+           <HelpCircle className="w-12 h-12 text-blue-200 shrink-0" />
+           <div>
+             <h2 className="text-xl font-black uppercase">Guide: How to show images to everyone?</h2>
+             <p className="opacity-80 text-sm font-medium italic">"Postimages.org" par photo upload karein aur uska **Direct Link** yahan paste karein. Isse photo har kisi ko dikhegi.</p>
+           </div>
+        </div>
 
-        {activeTab === 'orders' && (
-          <div className="bg-white rounded-[3rem] border border-slate-200 shadow-sm overflow-hidden p-8">
-             <table className="w-full text-left">
-               <thead>
-                 <tr className="bg-slate-50">
-                   <th className="p-6 text-[10px] font-black uppercase tracking-widest">Customer</th>
-                   <th className="p-6 text-[10px] font-black uppercase tracking-widest">Amount</th>
-                   <th className="p-6 text-[10px] font-black uppercase tracking-widest">Actions</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {orders.map(order => (
-                   <tr key={order.id} className="border-t border-slate-100">
-                     <td className="p-6"><p className="font-bold">{order.name}</p><p className="text-xs text-slate-400">{order.email}</p></td>
-                     <td className="p-6 font-bold">₹{order.amount}</td>
-                     <td className="p-6 flex gap-2">
-                       <button onClick={() => setViewingProof(order.proofImage || null)} className="p-2 text-blue-600 bg-blue-50 rounded-lg"><ImageIcon className="w-4 h-4" /></button>
-                       <button onClick={() => deleteOrder(order.id)} className="p-2 text-red-600 bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                       {order.status === 'pending' && <button onClick={() => markVerified(order.id)} className="p-2 text-green-600 bg-green-50 rounded-lg"><CheckCircle2 className="w-4 h-4" /></button>}
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
+        {activeTab === 'config' && (
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-200 space-y-8">
+            <h3 className="text-2xl font-black uppercase italic">Hero Banner (1200x500)</h3>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Paste Image Direct Link (URL)</label>
+              <div className="relative">
+                <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  value={siteBanner} 
+                  onChange={e => setSiteBanner(e.target.value)}
+                  placeholder="Paste URL here..."
+                  className="w-full p-4 pl-12 bg-slate-50 border rounded-xl font-bold text-sm"
+                />
+              </div>
+            </div>
+            {siteBanner && (
+              <div className="aspect-[12/5] rounded-xl overflow-hidden bg-slate-100 border-2 border-slate-200">
+                <img src={siteBanner} className="w-full h-full object-cover" alt="Preview" />
+              </div>
+            )}
+            <button onClick={() => { saveToStorage('vault_banner', siteBanner); alert('Banner Updated Globally!'); }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">
+              Save Banner Globally
+            </button>
           </div>
         )}
 
         {activeTab === 'products' && (
-          <div className="space-y-8">
-            <button onClick={handleAddNewProduct} className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest flex items-center gap-2"><Plus className="w-4 h-4" /> Add Product</button>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {products.map(p => (
-                <div key={p.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 flex gap-6">
-                  <img src={p.image} className="w-24 h-36 object-cover rounded-xl" />
-                  <div className="flex-grow">
-                    <h3 className="text-xl font-black">{p.name}</h3>
-                    <p className="text-indigo-600 font-bold">₹{p.price}</p>
-                    <div className="mt-4 flex gap-2">
-                      <button onClick={() => setEditingProduct(p)} className="p-3 bg-slate-100 rounded-xl"><Edit className="w-4 h-4" /></button>
-                      <button onClick={() => deleteProduct(p.id)} className="p-3 bg-red-50 text-red-500 rounded-xl"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {products.map(p => (
+              <div key={p.id} className="bg-white p-6 rounded-3xl border border-slate-200 flex flex-col gap-6">
+                <div className="aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-lg border-2 border-slate-50">
+                  <img src={p.image} className="w-full h-full object-cover" />
                 </div>
-              ))}
-            </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-black uppercase">{p.name}</h3>
+                  <p className="text-indigo-600 font-black">₹{p.price}</p>
+                  <button onClick={() => setEditingProduct(p)} className="w-full bg-slate-900 text-white py-3 rounded-xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2">
+                    <Edit className="w-3 h-3" /> Edit Global URL & Price
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {activeTab === 'config' && (
-          <div className="max-w-3xl space-y-12">
-             <div className="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-sm space-y-8">
-                <h3 className="text-2xl font-black uppercase italic">Hero Banner (1200x500)</h3>
-                <div className="aspect-[12/5] rounded-2xl overflow-hidden bg-slate-100 relative group">
-                   <img src={siteBanner} className="w-full h-full object-cover" />
-                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white cursor-pointer transition-opacity">
-                      <Upload className="w-10 h-10" />
-                      <input type="file" onChange={handleBannerUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                   </div>
-                </div>
-                
-                <div className="space-y-4">
-                   <h3 className="text-2xl font-black uppercase italic">Payment Details</h3>
-                   <input value={recipientName} onChange={e => setRecipientName(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Recipient Name" />
-                   <textarea value={paymentInstruction} onChange={e => setPaymentInstruction(e.target.value)} className="w-full p-4 bg-slate-50 border rounded-xl h-24" placeholder="Instructions" />
-                   <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 bg-slate-50 border rounded-xl flex items-center justify-center relative overflow-hidden">
-                        {siteQrCode ? <img src={siteQrCode} className="w-full h-full object-contain" /> : <QrIcon />}
-                        <input type="file" onChange={handleQrUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                      </div>
-                      <p className="text-xs font-bold text-slate-400 uppercase">Upload UPI QR Code</p>
-                   </div>
-                </div>
-
-                <button onClick={saveSiteConfig} className="w-full bg-blue-600 text-white py-6 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-3">
-                  <Save className="w-6 h-6" /> Save All Config
-                </button>
-             </div>
+        {activeTab === 'orders' && (
+          <div className="bg-white p-8 rounded-3xl border border-slate-200">
+            <h2 className="text-2xl font-black uppercase mb-6">Recent Customer Proofs</h2>
+            {orders.length === 0 ? <p className="text-slate-400 text-center py-10">No orders yet.</p> : (
+              <div className="divide-y">
+                {orders.map((o: any) => (
+                  <div key={o.id} className="py-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-lg uppercase">{o.name}</p>
+                      <p className="text-xs text-slate-400 font-black tracking-widest uppercase">{o.product}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       <p className="font-black text-indigo-600">₹{o.amount}</p>
+                       <button className="bg-green-100 text-green-700 p-2 rounded-lg"><CheckCircle2 className="w-5 h-5" /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
 
-      {/* Product Edit Modal */}
       {editingProduct && (
         <div className="fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-           <div className="bg-white w-full max-w-lg rounded-[3rem] p-10 space-y-6">
-              <h2 className="text-2xl font-black uppercase">Edit Product</h2>
-              <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Name" />
-              <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Price" />
-              <input value={editingProduct.description} onChange={e => setEditingProduct({...editingProduct, description: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-xl" placeholder="Hindi Tagline" />
-              <div className="flex gap-4 items-center">
-                 <div className="w-16 h-24 bg-slate-50 border rounded-xl relative overflow-hidden">
-                    <img src={editingProduct.image} className="w-full h-full object-cover" />
-                    <input type="file" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                 </div>
-                 <p className="text-xs font-bold uppercase text-slate-400">Tap to upload Image</p>
-              </div>
-              <button onClick={handleSaveProduct} className="w-full bg-blue-600 text-white py-4 rounded-xl font-black uppercase">Save Product</button>
-              <button onClick={() => setEditingProduct(null)} className="w-full text-slate-400 font-bold uppercase text-xs">Cancel</button>
-           </div>
-        </div>
-      )}
+          <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-10 space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-black uppercase italic">Edit Global Details</h2>
+              <button onClick={() => setEditingProduct(null)}><X className="w-6 h-6" /></button>
+            </div>
+            
+            <div className="space-y-4">
+              <label className="text-[10px] font-black uppercase tracking-widest">Global Product Image Link (URL)</label>
+              <input value={editingProduct.image} onChange={e => setEditingProduct({...editingProduct, image: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-xl font-bold text-sm" />
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">Postimages.org se copy kiya hua "Direct Link" yahan daalein.</p>
+            </div>
 
-      {/* Proof Viewing Modal */}
-      {viewingProof && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/95 flex items-center justify-center p-4" onClick={() => setViewingProof(null)}>
-           <img src={viewingProof} className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest">Name</label>
+                <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest">Price (₹)</label>
+                <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-xl font-bold" />
+              </div>
+            </div>
+
+            <button onClick={handleSaveProduct} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">
+              Save For All Customers
+            </button>
+          </div>
         </div>
       )}
     </div>

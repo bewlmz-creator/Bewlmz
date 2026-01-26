@@ -15,11 +15,11 @@ export const FEATURED_PRODUCTS: Product[] = [
     name: 'Plan A',
     price: 999.00,
     description: 'इस एक Idea से आपकी पूरी जिंदगी बदल जाएगी..!!',
-    longDescription: 'Plan A is a specialized starter course focusing on a high-growth single business model. Perfect for beginners, this course takes you through 7 detailed episodes.',
+    longDescription: 'Plan A is a specialized starter course focusing on a high-growth single business model.',
     features: [
       'Total Episode : 7',
       "No of Idea's : 1",
-      'Stock : Only For 100 People'
+      'Access : Lifetime'
     ],
     image: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&q=80&w=800&h=1200',
     category: 'course',
@@ -30,11 +30,11 @@ export const FEATURED_PRODUCTS: Product[] = [
     name: 'Plan B',
     price: 299.00,
     description: 'इस एक Idea से आपकी पूरी जिंदगी बदल जाएगी..!!',
-    longDescription: 'Plan B is our most powerful success bundle. It contains 3 recent, high-potential business ideas currently dominating the digital space.',
+    longDescription: 'Plan B is our most powerful success bundle with recent high-potential business ideas.',
     features: [
       'Total Episode : 12 +',
       "No of Idea's : 3 (Recent)",
-      'Time : Min. 2 Hour / Day'
+      'Support : 24/7'
     ],
     image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&q=80&w=800&h=1200',
     category: 'course',
