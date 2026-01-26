@@ -2,7 +2,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { Link } from 'react-router-dom';
-import { Star, Heart, Zap } from 'lucide-react';
+import { Star, Heart, Zap, ShoppingCart } from 'lucide-react';
 
 interface Props {
   product: Product;
@@ -10,7 +10,7 @@ interface Props {
   onBuyNow: (product: Product) => void;
 }
 
-const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
+const ProductCard: React.FC<Props> = ({ product, onAdd, onBuyNow }) => {
   const originalPrice = Math.round(product.price * 2.5);
   const discount = 60;
   
@@ -61,19 +61,32 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
           </Link>
         </div>
 
-        <div className="mt-auto w-full space-y-3 md:space-y-6">
-          <div className="flex flex-col md:flex-row items-center justify-center gap-0 md:gap-4">
+        <div className="mt-auto w-full space-y-2 md:space-y-4">
+          <div className="flex flex-col md:flex-row items-center justify-center gap-0 md:gap-4 mb-2">
             <span className="text-lg md:text-6xl font-[1000] text-gray-900 tracking-tighter">₹{product.price.toFixed(0)}</span>
             <span className="text-[10px] md:text-2xl text-gray-300 line-through font-bold">₹{originalPrice}</span>
           </div>
 
-          <button 
-            onClick={() => onBuyNow(product)}
-            className="w-full bg-slate-900 hover:bg-indigo-600 text-white py-2.5 md:py-8 rounded-lg md:rounded-[2rem] text-[9px] md:text-xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 group/btn flex items-center justify-center gap-1.5"
-          >
-            <Zap className="w-2.5 h-2.5 md:w-8 md:h-8 text-amber-400 fill-current" />
-            <span>Enroll</span>
-          </button>
+          {/* Button Group */}
+          <div className="flex flex-col gap-1.5 md:gap-4 w-full">
+            {/* Primary Action: Enroll / Add to Cart */}
+            <button 
+              onClick={() => onAdd(product)}
+              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-900 py-2 md:py-6 rounded-lg md:rounded-2xl text-[8px] md:text-lg font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <ShoppingCart className="w-2.5 h-2.5 md:w-6 md:h-6" />
+              <span>Enroll</span>
+            </button>
+
+            {/* Secondary Action: Buy Now (Direct Checkout) */}
+            <button 
+              onClick={() => onBuyNow(product)}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 md:py-8 rounded-lg md:rounded-[2rem] text-[9px] md:text-xl font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <Zap className="w-2.5 h-2.5 md:w-8 md:h-8 text-amber-400 fill-current" />
+              <span>Buy Now</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

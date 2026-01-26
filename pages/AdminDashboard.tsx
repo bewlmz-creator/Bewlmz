@@ -16,7 +16,10 @@ import {
   QrCode,
   User,
   Info,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Eye,
+  Maximize2,
+  AlertCircle
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -32,6 +35,7 @@ const AdminDashboard: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'config' | 'payment'>('orders');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [viewingProof, setViewingProof] = useState<string | null>(null);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -170,25 +174,62 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             <h2 className="text-2xl font-black uppercase italic">Customer Orders</h2>
             {orders.length === 0 ? <p className="text-slate-400 py-10">No orders yet.</p> : (
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {orders.map((o) => (
-                  <div key={o.id} className="bg-white p-6 rounded-3xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <p className="font-black text-lg uppercase">{o.name}</p>
-                      <p className="text-xs text-slate-400 font-bold">{o.email} • {o.product}</p>
-                      <p className="text-indigo-600 font-black mt-1">₹{o.amount}</p>
+                  <div key={o.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex-grow">
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="font-black text-xl md:text-2xl uppercase tracking-tighter text-slate-900">{o.name}</p>
+                        {o.status === 'verified' && <span className="text-[8px] font-black uppercase tracking-widest bg-green-100 text-green-600 px-2 py-1 rounded">Verified ✓</span>}
+                      </div>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{o.email}</p>
+                      <div className="mt-3 flex items-center gap-4">
+                        <span className="text-indigo-600 font-[1000] text-xl">₹{o.amount}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-300 bg-slate-50 px-2 py-1 rounded border border-slate-100">{o.product}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 w-full md:w-auto">
-                      {o.proofImage && (
-                        <a href={o.proofImage} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase text-blue-600 underline">View Proof</a>
-                      )}
-                      {o.status === 'pending' ? (
-                        <button onClick={() => handleVerifyOrder(o.id)} className="flex-1 md:flex-none bg-green-600 text-white px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4" /> Verify Payment
+
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      {/* Payment Proof Thumbnail */}
+                      {o.proofImage ? (
+                        <button 
+                          onClick={() => setViewingProof(o.proofImage)}
+                          className="group relative w-20 h-28 md:w-24 md:h-36 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 hover:border-indigo-500 transition-all shrink-0"
+                        >
+                          <img src={o.proofImage} alt="Proof" className="w-full h-full object-cover opacity-80 group-hover:opacity-100" />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Maximize2 className="w-6 h-6 text-white" />
+                          </div>
                         </button>
                       ) : (
-                        <span className="text-green-600 font-black uppercase text-[10px] tracking-widest bg-green-50 px-4 py-2 rounded-lg">Verified ✓</span>
+                        <div className="w-20 h-28 md:w-24 md:h-36 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-300">
+                          <AlertCircle className="w-6 h-6 mb-1" />
+                          <span className="text-[8px] font-black uppercase tracking-widest">No Proof</span>
+                        </div>
                       )}
+
+                      <div className="flex flex-col gap-2 flex-grow md:flex-grow-0">
+                        {o.status === 'pending' ? (
+                          <button 
+                            onClick={() => handleVerifyOrder(o.id)} 
+                            className="w-full md:w-48 bg-green-600 hover:bg-green-700 text-white px-6 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-green-100 active:scale-95 transition-all"
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Verify Payment
+                          </button>
+                        ) : (
+                          <div className="w-full md:w-48 text-center py-4 rounded-xl bg-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-widest border border-slate-200">
+                            Already Verified
+                          </div>
+                        )}
+                        {o.proofImage && (
+                          <button 
+                            onClick={() => setViewingProof(o.proofImage)}
+                            className="text-[10px] font-black uppercase text-indigo-600 flex items-center justify-center gap-1 hover:underline"
+                          >
+                            <Eye className="w-3 h-3" /> Check Screenshot
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -230,6 +271,26 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Proof Viewer Modal */}
+      {viewingProof && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-4 md:p-10 animate-in fade-in duration-300">
+           <button 
+             onClick={() => setViewingProof(null)}
+             className="absolute top-6 right-6 p-4 bg-white/10 hover:bg-red-500 text-white rounded-full transition-colors z-[210]"
+           >
+             <X className="w-8 h-8" />
+           </button>
+           <div className="relative w-full max-w-4xl max-h-full flex items-center justify-center overflow-hidden">
+             <img 
+               src={viewingProof} 
+               alt="Full Payment Proof" 
+               className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl border-4 border-white/10"
+             />
+           </div>
+           <p className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 text-xs font-black uppercase tracking-widest">Tap anywhere outside or close button to exit</p>
+        </div>
+      )}
 
       {/* Edit Product Modal */}
       {editingProduct && (
