@@ -62,7 +62,7 @@ const Home: React.FC<Props> = ({ addToCart }) => {
         <FakePurchaseSlider />
       </div>
 
-      {/* 3. PRODUCT GRID - 2 COLUMNS ON MOBILE (BARABAR MEIN) */}
+      {/* 3. PRODUCT GRID */}
       <section className="py-10 md:py-24 px-3 md:px-4 max-w-7xl mx-auto w-full">
         <div className="flex flex-col items-center text-center mb-10 md:mb-16 border-b border-gray-100 pb-10 md:pb-16">
            <h2 className="text-[10px] md:text-base font-black text-indigo-600 uppercase tracking-widest mb-2 md:mb-4">bewlmz Marketplace</h2>
@@ -71,8 +71,7 @@ const Home: React.FC<Props> = ({ addToCart }) => {
            </p>
         </div>
         
-        {/* Changed grid-cols-1 to grid-cols-2 for mobile side-by-side view */}
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-20 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-12 max-w-3xl mx-auto justify-items-center">
           {products.map(product => (
             <ProductCard key={product.id} product={product} onAdd={addToCart} onBuyNow={handleBuyNow} />
           ))}
