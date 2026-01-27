@@ -42,15 +42,13 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
               src={product.image} 
               alt={product.name} 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
               loading="lazy"
               onError={() => setImageError(true)}
             />
           ) : (
              <div className="flex flex-col items-center gap-1 text-slate-300">
                <ImageIcon className="w-6 h-6 md:w-10 md:h-10" />
-               <span className="text-[5px] md:text-[7px] font-black uppercase tracking-widest text-slate-400 px-2 text-center">No Image</span>
+               <span className="text-[5px] md:text-[7px] font-black uppercase tracking-widest text-slate-400 px-2 text-center">Image Error</span>
              </div>
           )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>

@@ -73,7 +73,15 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
           <div className="relative">
             <div className="lg:sticky lg:top-32">
               <div className="rounded-[4.5rem] md:rounded-[6.5rem] overflow-hidden relative aspect-[2/3] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.35)] hover:shadow-indigo-500/20 transition-all duration-700 bg-slate-50 border border-slate-100">
-                <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                <img 
+                  src={product.image} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const original = FEATURED_PRODUCTS.find(p => p.id === product.id);
+                    if (original) e.currentTarget.src = original.image;
+                  }}
+                />
                 {product.id === 'plan-b' && (
                   <div className="absolute top-10 left-10 md:top-20 md:left-20 bg-indigo-600 text-white px-8 py-2.5 md:px-16 md:py-7 rounded-full font-black text-[12px] md:text-3xl uppercase tracking-widest shadow-2xl z-20 border-2 border-white/20">
                     Elite Bundle

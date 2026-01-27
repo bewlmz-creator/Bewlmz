@@ -27,10 +27,14 @@ const Home: React.FC<Props> = ({ addToCart }) => {
   useEffect(() => {
     const loadSiteData = () => {
       const savedProducts = localStorage.getItem('vault_products');
-      if (savedProducts) setProducts(JSON.parse(savedProducts).slice(0, 2));
+      if (savedProducts) {
+        setProducts(JSON.parse(savedProducts).slice(0, 2));
+      } else {
+        setProducts(FEATURED_PRODUCTS);
+      }
 
       const savedBanner = localStorage.getItem('vault_banner');
-      if (savedBanner) setBanner(savedBanner);
+      setBanner(savedBanner || HERO_BANNER);
     };
 
     window.addEventListener('storage', loadSiteData);
@@ -52,6 +56,9 @@ const Home: React.FC<Props> = ({ addToCart }) => {
             src={banner} 
             alt="Hero Banner"
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = HERO_BANNER;
+            }}
           />
         </div>
       </section>

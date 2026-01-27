@@ -37,7 +37,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
     navigate('/payment-proof');
   };
 
-  // Helper to split text by space for colored emphasis (Ranjit Rishidev style)
   const formatName = (name: string) => {
     const parts = name.split(' ');
     if (parts.length < 2) return name;
@@ -50,7 +49,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
 
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center overflow-y-auto">
-      {/* Mini Top Bar */}
       <div className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-100">
         <button 
           onClick={() => navigate('/checkout')}
@@ -66,8 +64,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
       </div>
 
       <div className="flex-grow w-full max-w-xl mx-auto px-4 py-6 flex flex-col items-center">
-        
-        {/* Recipient Name - BIG & BOLD */}
         <div className="text-center mb-6">
           <h2 className="text-4xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter leading-none mb-1">
             {formatName(recipientName)}
@@ -75,7 +71,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Official Recipient</p>
         </div>
 
-        {/* QR Code Container - FULL SCREEN IMPACT */}
         <div className="w-full aspect-square relative mb-8">
            <div className="absolute inset-0 bg-indigo-500/5 rounded-[3rem] blur-3xl"></div>
            <div className="relative w-full h-full bg-white border-8 border-slate-50 rounded-[3rem] shadow-2xl flex items-center justify-center p-6 md:p-10">
@@ -84,7 +79,10 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
                   src={customQr} 
                   alt="Payment QR" 
                   className="w-full h-full object-contain"
-                  style={{ imageRendering: 'auto' }}
+                  onError={(e) => {
+                    console.error("QR Load failed");
+                    setCustomQr(null);
+                  }}
                 />
               ) : (
                 <div className="flex flex-col items-center text-slate-200">
@@ -95,13 +93,11 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
            </div>
         </div>
 
-        {/* Amount Tag */}
         <div className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center gap-4 shadow-xl mb-8">
            <Smartphone className="w-6 h-6 text-indigo-400" />
            <span className="text-2xl md:text-4xl font-black tracking-tighter">₹{total.toFixed(0)}</span>
         </div>
 
-        {/* Instructions */}
         <div className="w-full bg-amber-50 border-2 border-amber-200 rounded-[2rem] p-5 md:p-8 text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-2 text-amber-700">
              <AlertCircle className="w-5 h-5" />
@@ -112,7 +108,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
           </p>
         </div>
 
-        {/* THE ONLY BUTTON */}
         <button 
           onClick={handlePayment}
           className="w-full py-6 md:py-8 bg-blue-600 hover:bg-blue-700 text-white rounded-[2rem] font-[1000] text-xl md:text-3xl uppercase tracking-widest shadow-2xl shadow-blue-500/30 flex items-center justify-center gap-4 active:scale-95 transition-all mb-12"
@@ -121,7 +116,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
           <span>PROCEED PAYMENT</span>
         </button>
 
-        {/* Logos */}
         <div className="flex items-center gap-8 opacity-30 grayscale pb-12">
            <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-6" />
            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Google_Pay_%28GPay%29_Logo.svg" alt="GPay" className="h-4" />
