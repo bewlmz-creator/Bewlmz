@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 import Checkout from './pages/Checkout';
@@ -23,32 +23,41 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   const [isVerified, setIsVerified] = useState(false);
   const location = useLocation();
   
-  useEffect(() => {
-    const checkVerification = () => {
-      const email = localStorage.getItem('last_customer_email');
-      if (!email) {
-        setIsVerified(false);
-        return;
-      }
-      const orders = VaultDB.getOrders();
-      const verified = orders.some((o: any) => o.email === email && o.status === 'verified');
-      setIsVerified(verified);
-    };
+  const checkVerification = useCallback(() => {
+    const rawEmail = localStorage.getItem('last_customer_email');
+    if (!rawEmail) {
+      setIsVerified(false);
+      return;
+    }
+    
+    const email = rawEmail.toLowerCase().trim();
+    const orders = VaultDB.getOrders();
+    const verified = orders.some((o: any) => 
+      o.email?.toLowerCase().trim() === email && o.status === 'verified'
+    );
+    
+    setIsVerified(verified);
+  }, []);
 
+  useEffect(() => {
     checkVerification();
     window.addEventListener('storage', checkVerification);
-    // Also listen for custom storage event dispatched by VaultDB
     window.addEventListener('vault_sync', checkVerification);
     
     return () => {
       window.removeEventListener('storage', checkVerification);
       window.removeEventListener('vault_sync', checkVerification);
     };
-  }, []);
+  }, [checkVerification]);
+
+  // Re-check on route change to handle cases where localStorage might have updated
+  useEffect(() => {
+    checkVerification();
+  }, [location.pathname, checkVerification]);
 
   const menuLinks = [
     { name: 'Home', path: '/', icon: HomeIcon },
-    ...(isVerified ? [{ name: 'My Downloads', path: '/my-downloads', icon: Download }] : []),
+    ...(isVerified ? [{ name: 'My Downloads', path: '/my-downloads', icon: Download, badge: 'New' }] : []),
     { name: 'About', path: '/about', icon: Info },
     { name: 'Privacy Policy', path: '/privacy-policy', icon: Shield },
     { name: 'Refund Policy', path: '/refund-policy', icon: RefreshCcw },
@@ -68,7 +77,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
             </button>
             <div className="hidden xs:flex items-center space-x-1.5 bg-indigo-600 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full shadow-lg border border-indigo-400">
                <Zap className="w-2.5 h-2.5 md:w-3 md:h-3 text-amber-400 fill-current" />
-               <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest">New</span>
+               <span className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest">Live</span>
             </div>
           </div>
 
@@ -85,9 +94,10 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
 
           <div className="flex items-center justify-end flex-1 gap-2 md:gap-4">
             {isVerified && (
-               <Link to="/my-downloads" className="hidden md:flex items-center gap-2 bg-indigo-100 text-indigo-600 px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest border border-indigo-200">
-                  <Download className="w-4 h-4" />
-                  <span>Downloads</span>
+               <Link to="/my-downloads" className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-1.5 md:px-5 md:py-3 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest border border-indigo-500 shadow-xl shadow-indigo-100 animate-pulse transition-all hover:scale-105 active:scale-95">
+                  <Download className="w-3 h-3 md:w-4 md:h-4" />
+                  <span className="hidden sm:inline">My Downloads</span>
+                  <span className="sm:hidden">Vault</span>
                </Link>
             )}
             <Link 
@@ -111,24 +121,32 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
               <div className="p-6 md:p-8 flex items-center justify-between border-b border-slate-50">
                 <div className="flex items-center space-x-2">
                   <div className="bg-indigo-600 p-1 rounded-lg"><Sparkles className="text-white w-4 h-4" /></div>
-                  <span className="text-lg font-black text-slate-900 tracking-tighter uppercase">Menu</span>
+                  <span className="text-lg font-black text-slate-900 tracking-tighter uppercase">Marketplace</span>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="p-2.5 bg-slate-100 rounded-xl hover:text-red-500"><X className="w-5 h-5" /></button>
               </div>
-              <div className="p-6 md:p-8 space-y-3">
+              <div className="p-6 md:p-8 space-y-3 flex-grow overflow-y-auto">
                 {menuLinks.map((link) => (
                   <Link 
                     key={link.name}
                     to={link.path} 
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center space-x-4 p-4 rounded-2xl text-[11px] md:text-[13px] font-black uppercase tracking-widest transition-all ${
-                      location.pathname === link.path ? 'bg-indigo-600 text-white shadow-xl' : 'bg-slate-50 text-slate-900'
+                    className={`flex items-center justify-between p-4 rounded-2xl text-[11px] md:text-[13px] font-black uppercase tracking-widest transition-all ${
+                      location.pathname === link.path ? 'bg-indigo-600 text-white shadow-xl' : 'bg-slate-50 text-slate-900 hover:bg-slate-100'
                     }`}
                   >
-                    <link.icon className="w-5 h-5 md:w-6 md:h-6" />
-                    <span>{link.name}</span>
+                    <div className="flex items-center space-x-4">
+                      <link.icon className="w-5 h-5 md:w-6 md:h-6" />
+                      <span>{link.name}</span>
+                    </div>
+                    {link.badge && (
+                      <span className="bg-amber-400 text-slate-900 px-2 py-0.5 rounded-md text-[8px] font-[1000]">{link.badge}</span>
+                    )}
                   </Link>
                 ))}
+              </div>
+              <div className="p-8 border-t border-slate-50">
+                 <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest text-center">Version 2.5 • Verified Vault</p>
               </div>
            </div>
         </div>

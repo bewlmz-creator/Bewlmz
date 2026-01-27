@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import VaultDB from '../db';
@@ -14,48 +14,56 @@ const MyDownloads: React.FC = () => {
   const [accessList, setAccessList] = useState<AccessItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAccess = () => {
-      const email = localStorage.getItem('last_customer_email');
-      if (!email) {
-        setLoading(false);
-        return;
-      }
-
-      const orders = VaultDB.getOrders();
-      const dbProducts = VaultDB.getProducts();
-      
-      const userOrders = orders.filter((o: any) => o.email === email);
-      
-      const access: AccessItem[] = [];
-      
-      userOrders.forEach((order: any) => {
-        // Match by IDs if available, fallback to name matching for legacy orders
-        dbProducts.forEach(p => {
-          const idMatch = order.productIds?.includes(p.id);
-          const nameMatch = order.product?.includes(p.name);
-          
-          if (idMatch || nameMatch) {
-            // Avoid duplicates
-            if (!access.find(item => item.id === p.id)) {
-              access.push({
-                ...p,
-                isVerified: order.status === 'verified',
-                orderDate: order.date
-              });
-            }
-          }
-        });
-      });
-
-      setAccessList(access);
+  const fetchAccess = useCallback(() => {
+    const rawEmail = localStorage.getItem('last_customer_email');
+    if (!rawEmail) {
       setLoading(false);
-    };
+      return;
+    }
 
+    const email = rawEmail.toLowerCase().trim();
+    const orders = VaultDB.getOrders();
+    const dbProducts = VaultDB.getProducts();
+    
+    // Filter orders by normalized email
+    const userOrders = orders.filter((o: any) => 
+      o.email?.toLowerCase().trim() === email
+    );
+    
+    const access: AccessItem[] = [];
+    
+    userOrders.forEach((order: any) => {
+      // Match by IDs if available, fallback to name matching for legacy orders
+      dbProducts.forEach(p => {
+        const idMatch = order.productIds?.includes(p.id);
+        const nameMatch = order.product?.includes(p.name);
+        
+        if (idMatch || nameMatch) {
+          // Avoid duplicates
+          if (!access.find(item => item.id === p.id)) {
+            access.push({
+              ...p,
+              isVerified: order.status === 'verified',
+              orderDate: order.date
+            });
+          }
+        }
+      });
+    });
+
+    setAccessList(access);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
     fetchAccess();
     window.addEventListener('storage', fetchAccess);
-    return () => window.removeEventListener('storage', fetchAccess);
-  }, []);
+    window.addEventListener('vault_sync', fetchAccess);
+    return () => {
+      window.removeEventListener('storage', fetchAccess);
+      window.removeEventListener('vault_sync', fetchAccess);
+    };
+  }, [fetchAccess]);
 
   const handleDownload = (product: Product) => {
     if (!product.downloadUrl || product.downloadUrl === '#' || product.downloadUrl === '') {
@@ -76,6 +84,7 @@ const MyDownloads: React.FC = () => {
            </div>
            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4">No Downloads Found</h2>
            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-10 max-w-sm leading-relaxed">
+             Email used: <span className="text-indigo-600">{localStorage.getItem('last_customer_email')}</span><br/>
              Make sure you are using the same email you used during checkout.
            </p>
            <Link to="/" className="inline-flex items-center gap-2 bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-slate-900 transition-all shadow-xl shadow-indigo-100 active:scale-95">

@@ -42,13 +42,25 @@ class VaultDB {
 
   static addOrder(order: any) {
     const orders = this.getOrders();
-    const updated = [order, ...orders];
+    // Normalize email before saving
+    const normalizedOrder = {
+      ...order,
+      email: order.email?.toLowerCase().trim()
+    };
+    const updated = [normalizedOrder, ...orders];
     this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
   }
 
   static updateOrder(orderId: string, updates: any) {
     const orders = this.getOrders();
-    const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
+    const updated = orders.map(o => {
+      if (o.id === orderId) {
+        const u = { ...o, ...updates };
+        if (u.email) u.email = u.email.toLowerCase().trim();
+        return u;
+      }
+      return o;
+    });
     this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
   }
 
@@ -84,7 +96,7 @@ class VaultDB {
 
   private static sync() {
     window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new Event('vault_sync'));
+    window.dispatchEvent(new CustomEvent('vault_sync', { detail: { timestamp: Date.now() } }));
   }
 }
 
