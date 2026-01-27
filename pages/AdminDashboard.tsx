@@ -17,7 +17,8 @@ import {
   Eye,
   Info,
   Database,
-  Smartphone
+  Smartphone,
+  Check
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -30,6 +31,7 @@ const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'config' | 'payment'>('orders');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [viewingProof, setViewingProof] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
@@ -47,10 +49,65 @@ const AdminDashboard: React.FC = () => {
     return () => window.removeEventListener('storage', syncDB);
   }, [navigate]);
 
-  const handleFileRead = (file: File, callback: (result: string) => void) => {
+  // Smart Image Compressor to solve "not saving" issues
+  const processAndCompressImage = (file: File, maxWidth = 800, callback: (result: string) => void) => {
     const reader = new FileReader();
-    reader.onload = () => callback(reader.result as string);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxWidth) {
+            width *= maxWidth / height;
+            height = maxWidth;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality JPEG
+          callback(compressedDataUrl);
+        }
+      };
+      img.src = e.target?.result as string;
+    };
     reader.readAsDataURL(file);
+  };
+
+  const handleSaveProduct = () => {
+    if (!editingProduct) return;
+    setIsSaving(true);
+    
+    setTimeout(() => {
+      const updated = products.map(p => p.id === editingProduct.id ? editingProduct : p);
+      const success = VaultDB.saveProducts(updated);
+      setIsSaving(false);
+      if (success) {
+        setEditingProduct(null);
+        alert('Product updated successfully!');
+      }
+    }, 500);
+  };
+
+  const handleSaveConfig = () => {
+    VaultDB.setPaymentConfig(paymentConfig);
+    alert('Payment configuration updated!');
+  };
+
+  const handleSaveBanner = () => {
+    const success = VaultDB.setBanner(siteBanner);
+    if (success) alert('Banner updated!');
   };
 
   return (
@@ -61,20 +118,25 @@ const AdminDashboard: React.FC = () => {
            <span className="hidden md:block">VaultDB</span>
         </div>
         <nav className="flex-grow p-4 space-y-2">
-          <button onClick={() => setActiveTab('orders')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'orders' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Users className="w-5 h-5" /><span className="hidden md:block font-bold text-xs uppercase tracking-widest">Orders</span>
-          </button>
-          <button onClick={() => setActiveTab('products')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'products' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Package className="w-5 h-5" /><span className="hidden md:block font-bold text-xs uppercase tracking-widest">Products</span>
-          </button>
-          <button onClick={() => setActiveTab('payment')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'payment' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <QrCode className="w-5 h-5" /><span className="hidden md:block font-bold text-xs uppercase tracking-widest">QR Code</span>
-          </button>
-          <button onClick={() => setActiveTab('config')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'config' ? 'bg-blue-600' : 'hover:bg-white/5'}`}>
-            <Layout className="w-5 h-5" /><span className="hidden md:block font-bold text-xs uppercase tracking-widest">Banner</span>
-          </button>
+          {[
+            { id: 'orders', icon: Users, label: 'Orders' },
+            { id: 'products', icon: Package, label: 'Products' },
+            { id: 'payment', icon: QrCode, label: 'QR Code' },
+            { id: 'config', icon: Layout, label: 'Banner' }
+          ].map((tab) => (
+            <button 
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)} 
+              className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-white/5'}`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span className="hidden md:block font-bold text-xs uppercase tracking-widest">{tab.label}</span>
+            </button>
+          ))}
         </nav>
-        <button onClick={() => { localStorage.removeItem('adminLoggedIn'); navigate('/'); }} className="p-8 text-red-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2 border-t border-white/10 hover:bg-red-500/10"><LogOut className="w-4 h-4"/> Logout</button>
+        <button onClick={() => { localStorage.removeItem('adminLoggedIn'); navigate('/'); }} className="p-8 text-red-400 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2 border-t border-white/10 hover:bg-red-500/10">
+          <LogOut className="w-4 h-4"/> Logout
+        </button>
       </aside>
 
       <main className="flex-grow p-4 md:p-12 overflow-y-auto">
@@ -84,7 +146,7 @@ const AdminDashboard: React.FC = () => {
               <h2 className="text-3xl font-black uppercase tracking-tighter italic">Order <span className="text-blue-600">Database</span></h2>
               <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl border border-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest">
                 <Smartphone className="w-4 h-4" />
-                <span>Connected: Local Storage</span>
+                <span>Device: Local Storage</span>
               </div>
             </header>
             
@@ -139,21 +201,19 @@ const AdminDashboard: React.FC = () => {
                 <div className="aspect-square bg-slate-50 rounded-[2.5rem] overflow-hidden border-2 border-slate-100 flex items-center justify-center relative group">
                   {paymentConfig.qr ? <img src={paymentConfig.qr} className="w-full h-full object-contain" /> : <QrCode className="w-24 h-24 text-slate-100" strokeWidth={1} />}
                   <input type="file" accept="image/*" onChange={(e) => {
-                    if(e.target.files?.[0]) handleFileRead(e.target.files[0], (qr) => setPaymentConfig(prev => ({ ...prev, qr })));
-                  }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                    if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 600, (qr) => setPaymentConfig(prev => ({ ...prev, qr })));
+                  }} className="absolute inset-0 opacity-0 cursor-pointer" title="Click to upload QR" />
                 </div>
+                <p className="text-[9px] text-center text-slate-400 font-bold uppercase tracking-widest italic">Images are automatically compressed for database efficiency</p>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-slate-50">
-                <input value={paymentConfig.recipient} onChange={e => setPaymentConfig(prev => ({ ...prev, recipient: e.target.value }))} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg" placeholder="Recipient Name" />
-                <textarea value={paymentConfig.instructions} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} rows={3} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm italic" placeholder="Instructions..." />
+                <input value={paymentConfig.recipient} onChange={e => setPaymentConfig(prev => ({ ...prev, recipient: e.target.value }))} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none focus:border-blue-500" placeholder="Recipient Name" />
+                <textarea value={paymentConfig.instructions} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} rows={3} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm italic outline-none focus:border-blue-500" placeholder="Instructions..." />
               </div>
 
-              <button onClick={() => {
-                VaultDB.setPaymentConfig(paymentConfig);
-                alert('Database updated: Payment Config');
-              }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">
-                Update Config
+              <button onClick={handleSaveConfig} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all active:scale-95">
+                Update Payment DB
               </button>
             </div>
           </div>
@@ -166,13 +226,10 @@ const AdminDashboard: React.FC = () => {
               <div className="aspect-[12/5] bg-slate-50 rounded-[2rem] overflow-hidden border-2 border-slate-100 relative group">
                 <img src={siteBanner} className="w-full h-full object-cover" />
                 <input type="file" accept="image/*" onChange={(e) => {
-                  if(e.target.files?.[0]) handleFileRead(e.target.files[0], setSiteBanner);
-                }} className="absolute inset-0 opacity-0 cursor-pointer" />
+                  if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 1200, setSiteBanner);
+                }} className="absolute inset-0 opacity-0 cursor-pointer" title="Update Banner" />
               </div>
-              <button onClick={() => {
-                VaultDB.setBanner(siteBanner);
-                alert('Database updated: Site Banner');
-              }} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-2xl">
+              <button onClick={handleSaveBanner} className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-2xl transition-all active:scale-95">
                 Push Update to Site
               </button>
             </div>
@@ -184,12 +241,15 @@ const AdminDashboard: React.FC = () => {
              <h2 className="text-3xl font-black uppercase tracking-tighter italic">Product <span className="text-blue-600">Vault</span></h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
               {products.map(p => (
-                <div key={p.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 space-y-4 shadow-sm group">
+                <div key={p.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 space-y-4 shadow-sm group hover:border-blue-200 transition-all">
                   <div className="aspect-[2/3] bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 relative">
                     <img src={p.image} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                   </div>
-                  <h3 className="font-black uppercase text-xl text-slate-900">{p.name}</h3>
-                  <button onClick={() => setEditingProduct(p)} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">
+                  <div className="flex justify-between items-center px-2">
+                    <h3 className="font-black uppercase text-xl text-slate-900">{p.name}</h3>
+                    <span className="text-blue-600 font-black">₹{p.price}</span>
+                  </div>
+                  <button onClick={() => setEditingProduct(p)} className="w-full py-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">
                      Edit Details
                   </button>
                 </div>
@@ -201,28 +261,44 @@ const AdminDashboard: React.FC = () => {
 
       {editingProduct && (
         <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-[3rem] p-8 md:p-12 space-y-8 overflow-y-auto max-h-[90vh]">
+          <div className="bg-white w-full max-w-xl rounded-[3rem] p-8 md:p-12 space-y-8 overflow-y-auto max-h-[90vh] shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase italic">Edit Product</h2>
-              <button onClick={() => setEditingProduct(null)}><X /></button>
+              <h2 className="text-2xl font-black uppercase italic tracking-tighter">Edit <span className="text-blue-600">Product</span></h2>
+              <button onClick={() => setEditingProduct(null)} className="p-2 hover:bg-slate-100 rounded-full"><X className="w-6 h-6" /></button>
             </div>
             <div className="space-y-6">
-               <div className="aspect-[2/3] w-32 mx-auto bg-slate-50 rounded-[2rem] overflow-hidden border-4 border-slate-100 relative group">
+               <div className="relative group mx-auto w-32 md:w-40 aspect-[2/3] bg-slate-50 rounded-[2rem] overflow-hidden border-4 border-slate-100 shadow-xl">
                   <img src={editingProduct.image} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[8px] font-black uppercase">
+                     <Upload className="w-6 h-6 mb-1" />
+                     <span>Change Image</span>
+                  </div>
                   <input type="file" accept="image/*" onChange={(e) => {
-                    if(e.target.files?.[0]) handleFileRead(e.target.files[0], (res) => setEditingProduct({...editingProduct, image: res}));
+                    if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 800, (res) => setEditingProduct({...editingProduct, image: res}));
                   }} className="absolute inset-0 opacity-0 cursor-pointer" />
                </div>
-               <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg" />
-               <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg" />
-               <input value={editingProduct.downloadUrl} onChange={e => setEditingProduct({...editingProduct, downloadUrl: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-xs" placeholder="Video Link" />
-               <button onClick={() => {
-                const updated = products.map(p => p.id === editingProduct.id ? editingProduct : p);
-                VaultDB.saveProducts(updated);
-                setEditingProduct(null);
-                alert('Database updated: Product');
-              }} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">
-                Save Changes
+               
+               <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Display Name</label>
+                    <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Price (₹)</label>
+                    <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none focus:border-blue-500" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-1">Digital Link (Video URL)</label>
+                    <input value={editingProduct.downloadUrl} onChange={e => setEditingProduct({...editingProduct, downloadUrl: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-xs outline-none focus:border-blue-500" placeholder="https://drive.google.com/..." />
+                  </div>
+               </div>
+
+               <button 
+                onClick={handleSaveProduct} 
+                disabled={isSaving}
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+               >
+                {isSaving ? 'Saving to Database...' : <><Check className="w-5 h-5" /> Save Product</>}
               </button>
             </div>
           </div>
@@ -232,7 +308,7 @@ const AdminDashboard: React.FC = () => {
       {viewingProof && (
         <div className="fixed inset-0 z-[110] bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" onClick={() => setViewingProof(null)}>
           <img src={viewingProof} className="max-w-xl w-full max-h-[80vh] object-contain rounded-[3rem] shadow-2xl border-4 border-white/10" />
-          <button onClick={() => setViewingProof(null)} className="mt-8 px-10 py-5 bg-white text-slate-900 rounded-2xl font-black uppercase text-xs">Close</button>
+          <button onClick={() => setViewingProof(null)} className="mt-8 px-10 py-5 bg-white text-slate-900 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Close Preview</button>
         </div>
       )}
     </div>

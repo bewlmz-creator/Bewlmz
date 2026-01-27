@@ -12,15 +12,26 @@ const DB_KEYS = {
 };
 
 class VaultDB {
+  private static safeSave(key: string, value: string): boolean {
+    try {
+      localStorage.setItem(key, value);
+      this.sync();
+      return true;
+    } catch (e) {
+      console.error("Database Save Error:", e);
+      alert("Error: Storage is full! Please use a smaller image or delete some old orders.");
+      return false;
+    }
+  }
+
   // Products
   static getProducts(): Product[] {
     const data = localStorage.getItem(DB_KEYS.PRODUCTS);
     return data ? JSON.parse(data) : FEATURED_PRODUCTS;
   }
 
-  static saveProducts(products: Product[]) {
-    localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
-    this.sync();
+  static saveProducts(products: Product[]): boolean {
+    return this.safeSave(DB_KEYS.PRODUCTS, JSON.stringify(products));
   }
 
   // Orders
@@ -32,21 +43,18 @@ class VaultDB {
   static addOrder(order: any) {
     const orders = this.getOrders();
     const updated = [order, ...orders];
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(updated));
-    this.sync();
+    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
   }
 
   static updateOrder(orderId: string, updates: any) {
     const orders = this.getOrders();
     const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(updated));
-    this.sync();
+    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
   }
 
   static deleteOrder(orderId: string) {
     const orders = this.getOrders().filter(o => o.id !== orderId);
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
-    this.sync();
+    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(orders));
   }
 
   // Site Config
@@ -54,9 +62,8 @@ class VaultDB {
     return localStorage.getItem(DB_KEYS.BANNER) || HERO_BANNER;
   }
 
-  static setBanner(url: string) {
-    localStorage.setItem(DB_KEYS.BANNER, url);
-    this.sync();
+  static setBanner(url: string): boolean {
+    return this.safeSave(DB_KEYS.BANNER, url);
   }
 
   static getPaymentConfig() {
@@ -67,11 +74,12 @@ class VaultDB {
     };
   }
 
-  static setPaymentConfig(config: { qr: string, recipient: string, instructions: string }) {
-    localStorage.setItem(DB_KEYS.QR_CODE, config.qr);
-    localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
-    localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
+  static setPaymentConfig(config: { qr: string, recipient: string, instructions: string }): boolean {
+    const successQr = localStorage.setItem(DB_KEYS.QR_CODE, config.qr);
+    const successRecipient = localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
+    const successInstructions = localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
     this.sync();
+    return true;
   }
 
   private static sync() {
