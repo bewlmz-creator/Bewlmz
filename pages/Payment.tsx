@@ -23,14 +23,20 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
       return;
     }
 
-    const savedQr = localStorage.getItem('vault_qr_code');
-    if (savedQr) setCustomQr(savedQr);
+    const loadSettings = () => {
+      const savedQr = localStorage.getItem('vault_qr_code');
+      setCustomQr(savedQr || null);
 
-    const savedRecipient = localStorage.getItem('vault_recipient_name');
-    if (savedRecipient) setRecipientName(savedRecipient);
+      const savedRecipient = localStorage.getItem('vault_recipient_name');
+      setRecipientName(savedRecipient || 'Ranjit Rishidev');
 
-    const savedInstruction = localStorage.getItem('vault_payment_instruction');
-    if (savedInstruction) setPaymentInstruction(savedInstruction);
+      const savedInstruction = localStorage.getItem('vault_payment_instruction');
+      setPaymentInstruction(savedInstruction || "ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद 'Proceed Payment' बटन दबाएं।");
+    };
+
+    loadSettings();
+    window.addEventListener('storage', loadSettings);
+    return () => window.removeEventListener('storage', loadSettings);
   }, [cart, navigate]);
 
   const handlePayment = () => {
@@ -85,9 +91,9 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
                   }}
                 />
               ) : (
-                <div className="flex flex-col items-center text-slate-200">
-                  <QrCode className="w-32 h-32 md:w-48 md:h-48 mb-4" strokeWidth={1} />
-                  <p className="text-xs font-black uppercase tracking-widest">No QR Uploaded</p>
+                <div className="flex flex-col items-center text-slate-200 text-center">
+                  <QrCode className="w-32 h-32 md:w-48 md:h-48 mb-4 opacity-10" strokeWidth={1} />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">No QR Uploaded by Admin</p>
                 </div>
               )}
            </div>

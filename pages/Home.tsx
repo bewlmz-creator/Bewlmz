@@ -4,7 +4,7 @@ import TextSlider from '../components/TextSlider';
 import FakePurchaseSlider from '../components/FakePurchaseSlider';
 import ProductCard from '../components/ProductCard';
 import { Product } from '../types';
-import { FEATURED_PRODUCTS, HERO_BANNER } from '../constants';
+import VaultDB from '../db';
 import { Link, useNavigate } from 'react-router-dom';
 
 interface Props {
@@ -13,22 +13,18 @@ interface Props {
 
 const Home: React.FC<Props> = ({ addToCart }) => {
   const navigate = useNavigate();
-  
   const [products, setProducts] = useState<Product[]>([]);
-  const [banner, setBanner] = useState(HERO_BANNER);
+  const [banner, setBanner] = useState('');
 
   useEffect(() => {
-    const loadData = () => {
-      const savedProducts = localStorage.getItem('vault_products');
-      setProducts(savedProducts ? JSON.parse(savedProducts).slice(0, 2) : FEATURED_PRODUCTS.slice(0, 2));
-      
-      const savedBanner = localStorage.getItem('vault_banner');
-      setBanner(savedBanner || HERO_BANNER);
+    const loadFromDB = () => {
+      setProducts(VaultDB.getProducts().slice(0, 2));
+      setBanner(VaultDB.getBanner());
     };
 
-    loadData();
-    window.addEventListener('storage', loadData);
-    return () => window.removeEventListener('storage', loadData);
+    loadFromDB();
+    window.addEventListener('storage', loadFromDB);
+    return () => window.removeEventListener('storage', loadFromDB);
   }, []);
 
   const handleBuyNow = (product: Product) => {
@@ -38,27 +34,21 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-gray-50/50 min-h-screen flex flex-col">
-      {/* 1. HERO BANNER - Exact 1200x500 Aspect Ratio */}
       <section className="relative w-full flex justify-center px-4 py-6 md:py-12">
-        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-100">
+        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1.5rem] md:rounded-[4rem] overflow-hidden shadow-2xl border border-slate-200 bg-slate-100 flex items-center justify-center">
           <img 
             src={banner} 
             alt="Hero Banner"
             className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.src = HERO_BANNER;
-            }}
           />
         </div>
       </section>
 
-      {/* 2. SLIDERS */}
       <div className="space-y-1">
         <TextSlider />
         <FakePurchaseSlider />
       </div>
 
-      {/* 3. PRODUCT GRID - Compact Small Boxes */}
       <section className="py-10 md:py-24 px-3 md:px-4 max-w-7xl mx-auto w-full">
         <div className="flex flex-col items-center text-center mb-10 md:mb-16 border-b border-gray-100 pb-10 md:pb-16">
            <h2 className="text-[10px] md:text-base font-black text-indigo-600 uppercase tracking-widest mb-2 md:mb-4">bewlmz Marketplace</h2>
@@ -74,7 +64,6 @@ const Home: React.FC<Props> = ({ addToCart }) => {
         </div>
       </section>
 
-      {/* 4. FOOTER CALL TO ACTION */}
       <div className="py-12 px-4">
         <div className="max-w-5xl mx-auto rounded-[2.5rem] md:rounded-[5rem] p-8 md:p-24 bg-white text-center shadow-xl border border-slate-50 flex flex-col items-center gap-6 md:gap-8">
           <h3 className="text-3xl md:text-7xl font-black text-slate-900 uppercase tracking-tighter">
