@@ -40,6 +40,7 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       name: localStorage.getItem('last_customer_name') || 'Unknown Customer',
       email: localStorage.getItem('last_customer_email') || 'N/A',
       product: cart.map(item => item.name).join(', '),
+      productIds: cart.map(item => item.id), // New: Storing IDs for 100% reliable access
       amount: total,
       date: new Date().toLocaleDateString(),
       status: 'pending',

@@ -14,6 +14,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import ProductDetails from './pages/ProductDetails';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
+import VaultDB from './db';
 import { CartItem, Product } from './types';
 import { ShoppingCart, Menu, X, Sparkles, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Zap, Lock, Download } from 'lucide-react';
 
@@ -25,14 +26,24 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   useEffect(() => {
     const checkVerification = () => {
       const email = localStorage.getItem('last_customer_email');
-      const orders = JSON.parse(localStorage.getItem('vault_orders') || '[]');
+      if (!email) {
+        setIsVerified(false);
+        return;
+      }
+      const orders = VaultDB.getOrders();
       const verified = orders.some((o: any) => o.email === email && o.status === 'verified');
       setIsVerified(verified);
     };
 
     checkVerification();
     window.addEventListener('storage', checkVerification);
-    return () => window.removeEventListener('storage', checkVerification);
+    // Also listen for custom storage event dispatched by VaultDB
+    window.addEventListener('vault_sync', checkVerification);
+    
+    return () => {
+      window.removeEventListener('storage', checkVerification);
+      window.removeEventListener('vault_sync', checkVerification);
+    };
   }, []);
 
   const menuLinks = [

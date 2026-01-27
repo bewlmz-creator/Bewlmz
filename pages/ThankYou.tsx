@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import VaultDB from '../db';
 import { PartyPopper, Download, Mail, ArrowLeft, Clock, CheckCircle2, Loader2, ShieldCheck, Lock } from 'lucide-react';
 
 const ThankYou: React.FC = () => {
@@ -10,20 +11,27 @@ const ThankYou: React.FC = () => {
   useEffect(() => {
     const checkStatus = () => {
       const email = localStorage.getItem('last_customer_email');
-      const orders = JSON.parse(localStorage.getItem('vault_orders') || '[]');
+      if (!email) {
+        setIsVerified(false);
+        setChecking(false);
+        return;
+      }
+      const orders = VaultDB.getOrders();
       const verified = orders.some((o: any) => o.email === email && o.status === 'verified');
       setIsVerified(verified);
       setChecking(false);
     };
 
     checkStatus();
-    // Re-check periodically or on storage event
-    const interval = setInterval(checkStatus, 5000);
+    // Re-check periodically
+    const interval = setInterval(checkStatus, 3000);
     window.addEventListener('storage', checkStatus);
+    window.addEventListener('vault_sync', checkStatus);
     
     return () => {
       clearInterval(interval);
       window.removeEventListener('storage', checkStatus);
+      window.removeEventListener('vault_sync', checkStatus);
     };
   }, []);
 

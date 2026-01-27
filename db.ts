@@ -75,15 +75,16 @@ class VaultDB {
   }
 
   static setPaymentConfig(config: { qr: string, recipient: string, instructions: string }): boolean {
-    const successQr = localStorage.setItem(DB_KEYS.QR_CODE, config.qr);
-    const successRecipient = localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
-    const successInstructions = localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
+    localStorage.setItem(DB_KEYS.QR_CODE, config.qr);
+    localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
+    localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
     this.sync();
     return true;
   }
 
   private static sync() {
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('vault_sync'));
   }
 }
 
