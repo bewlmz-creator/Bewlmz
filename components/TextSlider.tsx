@@ -44,59 +44,65 @@ const TextSlider: React.FC = () => {
   const currentSlide = formatSlide(slides[currentIndex] || "");
 
   return (
-    <div className="px-4 py-1 md:py-2 bg-transparent">
+    <div className="px-4 py-2 md:py-6 bg-transparent">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-[1rem] md:rounded-[2rem] p-2 md:p-4 shadow-[0_10px_30px_rgba(0,0,0,0.03)] border border-indigo-100/30 relative overflow-hidden group">
+        {/* Increased padding and height of the container */}
+        <div className="bg-white rounded-[1.5rem] md:rounded-[3rem] p-4 md:p-10 shadow-[0_15px_40px_rgba(0,0,0,0.05)] border border-indigo-100/40 relative overflow-hidden group min-h-[140px] md:min-h-[200px] flex flex-col justify-center">
           
-          <div className="absolute top-1.5 left-6 z-20">
-            <div className="flex items-center space-x-1.5 bg-indigo-50/80 border border-indigo-100/50 px-2 py-0.5 rounded-full">
-              <Target className="w-2 h-2 text-indigo-600" />
-              <span className="text-[6px] md:text-[7px] font-black text-indigo-600 uppercase tracking-widest">Guide</span>
+          <div className="absolute top-3 left-8 z-20">
+            <div className="flex items-center space-x-2 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+              <Target className="w-3 h-3 md:w-4 md:h-4 text-indigo-600" />
+              <span className="text-[8px] md:text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em]">Strategy Guide</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between relative z-10">
             <button 
               onClick={() => setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length)}
-              className="p-1.5 md:p-2.5 bg-slate-50 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-lg transition-all hidden sm:flex shrink-0 border border-slate-100 shadow-sm active:scale-90"
+              className="p-2 md:p-4 bg-slate-50 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-2xl transition-all hidden md:flex shrink-0 border border-slate-100 shadow-sm active:scale-90"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-6 h-6" />
             </button>
             
-            <div className="flex-grow px-4 md:px-12 min-h-[70px] md:min-h-[85px] flex flex-col items-center justify-center space-y-2 md:space-y-3">
+            {/* Increased minimum height for the text area and removed line-clamping */}
+            <div className="flex-grow px-4 md:px-16 flex flex-col items-center justify-center space-y-3 md:space-y-6">
               {currentSlide.step && (
-                <div className="flex items-center space-x-2">
-                  <div className="bg-slate-900 text-white text-[6px] md:text-[9px] font-black px-2 py-1 rounded-md uppercase tracking-[0.1em] shadow-sm animate-fade-in flex items-center gap-1">
-                    <Zap className="w-2 h-2 fill-current text-amber-400" />
+                <div className="flex items-center space-x-3">
+                  <div className="bg-slate-950 text-white text-[8px] md:text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] shadow-lg animate-fade-in flex items-center gap-2">
+                    <Zap className="w-3 h-3 fill-current text-amber-400" />
                     {currentSlide.step}
                   </div>
                 </div>
               )}
-              <p className="text-[11px] sm:text-sm md:text-lg lg:text-xl font-black leading-tight animate-fade-in tracking-tight text-slate-800 text-center italic line-clamp-2">
+              {/* Increased font size for better visibility */}
+              <p className="text-sm sm:text-lg md:text-3xl lg:text-4xl font-black leading-snug animate-fade-in tracking-tight text-slate-800 text-center italic">
                 "{currentSlide.content}"
               </p>
             </div>
 
             <button 
               onClick={() => setCurrentIndex((prev) => (prev + 1) % slides.length)}
-              className="p-1.5 md:p-2.5 bg-slate-50 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-lg transition-all hidden sm:flex shrink-0 border border-slate-100 shadow-sm active:scale-90"
+              className="p-2 md:p-4 bg-slate-50 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-2xl transition-all hidden md:flex shrink-0 border border-slate-100 shadow-sm active:scale-90"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-6 h-6" />
             </button>
           </div>
           
-          <div className="flex justify-center space-x-1.5 mt-2">
+          {/* Bigger pagination dots */}
+          <div className="flex justify-center space-x-2 mt-4 md:mt-8">
             {slides.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentIndex(i)}
-                className={`h-0.5 rounded-full transition-all duration-700 ${i === currentIndex ? 'w-4 md:w-8 bg-indigo-500' : 'w-1 bg-slate-200'}`}
+                className={`h-1.5 rounded-full transition-all duration-700 ${i === currentIndex ? 'w-6 md:w-12 bg-indigo-500' : 'w-2 bg-slate-200 hover:bg-slate-300'}`}
                 aria-label={`Go to slide ${i + 1}`}
               />
             ))}
           </div>
 
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/30 rounded-full blur-[40px] pointer-events-none"></div>
+          {/* Decorative gradients */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/40 rounded-full blur-[60px] pointer-events-none opacity-50"></div>
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-50/40 rounded-full blur-[60px] pointer-events-none opacity-50"></div>
         </div>
       </div>
     </div>

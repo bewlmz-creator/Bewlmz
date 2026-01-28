@@ -57,9 +57,11 @@ const Home: React.FC<Props> = ({ addToCart }) => {
            </p>
         </div>
         
-        <div className="grid grid-cols-2 gap-4 md:gap-12 max-w-3xl mx-auto justify-items-center">
+        <div className="grid grid-cols-2 gap-4 md:gap-12 max-w-4xl mx-auto items-stretch justify-center">
           {products.map(product => (
-            <ProductCard key={product.id} product={product} onAdd={addToCart} onBuyNow={handleBuyNow} />
+            <div key={product.id} className="flex justify-center">
+              <ProductCard product={product} onAdd={addToCart} onBuyNow={handleBuyNow} />
+            </div>
           ))}
         </div>
       </section>
