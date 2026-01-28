@@ -148,10 +148,10 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
               <div className="w-full pt-4">
                 <button 
                   onClick={handleBuyNow}
-                  className="w-full bg-indigo-600 hover:bg-slate-900 text-white py-5 md:py-8 rounded-[1.5rem] md:rounded-[2.5rem] text-lg md:text-4xl font-[1000] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center space-x-3 md:space-x-8 group"
+                  className="w-full bg-blue-600 hover:bg-slate-900 text-white py-5 md:py-8 rounded-[1.5rem] md:rounded-[2.5rem] text-lg md:text-4xl font-[1000] transition-all shadow-xl active:scale-[0.98] flex items-center justify-center space-x-3 md:space-x-8 group"
                 >
                   <Zap className="w-6 h-6 md:w-10 md:h-10 text-amber-400 fill-current" />
-                  <span>ENROLL NOW</span>
+                  <span>BUY NOW</span>
                 </button>
               </div>
             </div>

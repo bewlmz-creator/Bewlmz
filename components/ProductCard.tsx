@@ -16,11 +16,11 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
   const discount = 60;
 
   return (
-    <div className="group bg-white rounded-[1rem] md:rounded-[1.5rem] border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-500 flex flex-col h-full relative shadow-sm mx-auto w-full max-w-[175px]">
+    <div className="group bg-white rounded-[1rem] md:rounded-[1.5rem] border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-500 flex flex-col h-full relative shadow-sm mx-auto w-full max-w-[175px]">
       
       {/* Top Badges */}
       <div className="absolute top-1.5 left-1.5 z-20 flex flex-col gap-1">
-        <div className="bg-red-500 text-white px-1.5 py-0.5 rounded-md font-black text-[6px] md:text-[8px] uppercase tracking-wider shadow-md">
+        <div className="bg-red-600 text-white px-1.5 py-0.5 rounded-md font-black text-[6px] md:text-[8px] uppercase tracking-wider shadow-md">
           -{discount}%
         </div>
       </div>
@@ -70,10 +70,10 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
 
           <button 
             onClick={() => onBuyNow(product)}
-            className="w-full bg-indigo-600 hover:bg-slate-900 text-white py-1 md:py-2 rounded-md md:rounded-lg text-[6px] md:text-[8px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center justify-center gap-1 group/btn"
+            className="w-full bg-blue-600 hover:bg-slate-900 text-white py-1.5 md:py-2.5 rounded-md md:rounded-lg text-[7px] md:text-[9px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center justify-center gap-1 group/btn"
           >
-            <Zap className="w-2 md:w-2.5 text-amber-400 fill-current" />
-            <span>Enroll</span>
+            <Zap className="w-2 md:w-3 text-amber-400 fill-current" />
+            <span>Buy Now</span>
           </button>
         </div>
       </div>
