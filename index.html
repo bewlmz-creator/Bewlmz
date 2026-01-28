@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,17 +13,32 @@
         body { font-family: 'Inter', 'Hind', sans-serif; }
         .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
         
+        /* Animation Classes used in the app */
         @keyframes fade-in {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+        
+        .animate-in {
+            animation-duration: 500ms;
+            animation-fill-mode: forwards;
+            animation-timing-function: ease-out;
+        }
+        
+        .fade-in {
+            animation-name: fade-in;
+        }
 
         @keyframes bounce-slow {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-15px); }
         }
         .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
+
+        /* Ensure smooth image loading */
+        img { opacity: 1; transition: opacity 0.3s; }
+        img:not([src]) { opacity: 0; }
     </style>
 <script type="importmap">
 {

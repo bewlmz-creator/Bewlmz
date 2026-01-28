@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import TextSlider from '../components/TextSlider';
 import FakePurchaseSlider from '../components/FakePurchaseSlider';
@@ -34,20 +33,25 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-white min-h-screen flex flex-col">
-      {/* Banner Section */}
+      {/* Banner Section - Ensures consistent sizing and visibility */}
       <section className="relative w-full flex justify-center px-4 pt-4 md:pt-6">
-        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1.2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg bg-slate-50 border border-slate-100">
+        <div className="max-w-[1200px] w-full aspect-[12/5] relative rounded-[1.2rem] md:rounded-[2.5rem] overflow-hidden shadow-lg bg-white border border-slate-100 flex items-center justify-center">
           <img 
             src={banner} 
             alt="Hero Banner"
             className="w-full h-full object-cover block"
-            style={{ minHeight: '100%' }}
+            loading="eager"
+            onError={(e) => {
+              console.error("Banner load error");
+              // Fallback if the saved banner is corrupt
+              setBanner(VaultDB.getBanner());
+            }}
           />
         </div>
       </section>
 
       {/* Sliders Container - Tight spacing */}
-      <div className="mt-2">
+      <div className="mt-4">
         <TextSlider />
         <FakePurchaseSlider />
       </div>
