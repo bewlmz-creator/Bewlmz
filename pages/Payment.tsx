@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CartItem } from '../types';
+import VaultDB from '../db';
 import { ShieldCheck, QrCode, Smartphone, ArrowLeft, Zap, AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -11,9 +12,7 @@ interface Props {
 
 const Payment: React.FC<Props> = ({ cart, clearCart }) => {
   const navigate = useNavigate();
-  const [customQr, setCustomQr] = useState<string | null>(null);
-  const [recipientName, setRecipientName] = useState('Ranjit Rishidev');
-  const [paymentInstruction, setPaymentInstruction] = useState("ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद 'Proceed Payment' बटन दबाएं।");
+  const [config, setConfig] = useState(() => VaultDB.getPaymentConfig());
   
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -24,19 +23,16 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
     }
 
     const loadSettings = () => {
-      const savedQr = localStorage.getItem('vault_qr_code');
-      setCustomQr(savedQr || null);
-
-      const savedRecipient = localStorage.getItem('vault_recipient_name');
-      setRecipientName(savedRecipient || 'Ranjit Rishidev');
-
-      const savedInstruction = localStorage.getItem('vault_payment_instruction');
-      setPaymentInstruction(savedInstruction || "ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद 'Proceed Payment' बटन दबाएं।");
+      setConfig(VaultDB.getPaymentConfig());
     };
 
     loadSettings();
     window.addEventListener('storage', loadSettings);
-    return () => window.removeEventListener('storage', loadSettings);
+    window.addEventListener('vault_sync', loadSettings);
+    return () => {
+      window.removeEventListener('storage', loadSettings);
+      window.removeEventListener('vault_sync', loadSettings);
+    };
   }, [cart, navigate]);
 
   const handlePayment = () => {
@@ -72,22 +68,21 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
       <div className="flex-grow w-full max-w-xl mx-auto px-4 py-6 flex flex-col items-center">
         <div className="text-center mb-6">
           <h2 className="text-4xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter leading-none mb-1">
-            {formatName(recipientName)}
+            {formatName(config.recipient)}
           </h2>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Official Recipient</p>
         </div>
 
         <div className="w-full aspect-square relative mb-8">
            <div className="absolute inset-0 bg-indigo-500/5 rounded-[3rem] blur-3xl"></div>
-           <div className="relative w-full h-full bg-white border-8 border-slate-50 rounded-[3rem] shadow-2xl flex items-center justify-center p-6 md:p-10">
-              {customQr ? (
+           <div className="relative w-full h-full bg-white border-8 border-slate-50 rounded-[3rem] shadow-2xl flex items-center justify-center p-6 md:p-10 overflow-hidden">
+              {config.qr ? (
                 <img 
-                  src={customQr} 
+                  src={config.qr} 
                   alt="Payment QR" 
                   className="w-full h-full object-contain"
                   onError={(e) => {
                     console.error("QR Load failed");
-                    setCustomQr(null);
                   }}
                 />
               ) : (
@@ -110,7 +105,7 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
              <span className="text-xs font-black uppercase tracking-widest">Instruction</span>
           </div>
           <p className="text-sm md:text-lg font-bold text-slate-800 italic leading-relaxed whitespace-pre-wrap">
-            {paymentInstruction}
+            {config.instructions}
           </p>
         </div>
 

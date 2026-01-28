@@ -1,6 +1,6 @@
 
 import { Product } from './types';
-import { FEATURED_PRODUCTS, HERO_BANNER } from './constants';
+import { FEATURED_PRODUCTS, HERO_BANNER, DEFAULT_QR_CODE } from './constants';
 
 const DB_KEYS = {
   PRODUCTS: 'bewlmz_db_products',
@@ -80,7 +80,7 @@ class VaultDB {
 
   static getPaymentConfig() {
     return {
-      qr: localStorage.getItem(DB_KEYS.QR_CODE) || '',
+      qr: localStorage.getItem(DB_KEYS.QR_CODE) || DEFAULT_QR_CODE,
       recipient: localStorage.getItem(DB_KEYS.RECIPIENT) || 'Ranjit Rishidev',
       instructions: localStorage.getItem(DB_KEYS.INSTRUCTIONS) || "ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद 'Proceed Payment' बटन दबाएं।"
     };

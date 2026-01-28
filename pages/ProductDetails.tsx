@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { ShoppingCart, ArrowLeft, TrendingUp, Package, CheckCircle2, Zap } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, TrendingUp, Package, CheckCircle2, Zap, Rocket, Star } from 'lucide-react';
 
 interface Props { addToCart: (product: Product) => void; }
 
@@ -50,9 +50,9 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
   const renderFeatureText = (text: string) => {
     const parts = text.split(':');
-    if (parts.length < 2) return <span>{text}</span>;
+    if (parts.length < 2) return <span className="text-xl md:text-3xl font-bold text-slate-700">{text}</span>;
     return (
-      <span className="text-lg md:text-5xl font-black text-slate-800 uppercase tracking-tight">
+      <span className="text-xl md:text-5xl font-black text-slate-800 uppercase tracking-tight">
         {parts[0]} : <span className="text-indigo-600">{parts[1]}</span>
       </span>
     );
@@ -72,19 +72,20 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-24">
           <div className="relative">
             <div className="lg:sticky lg:top-32">
-              <div className="rounded-[4.5rem] md:rounded-[6.5rem] overflow-hidden relative aspect-[2/3] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.35)] hover:shadow-indigo-500/20 transition-all duration-700 bg-slate-50 border border-slate-100">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    const original = FEATURED_PRODUCTS.find(p => p.id === product.id);
-                    if (original) e.currentTarget.src = original.image;
-                  }}
-                />
+              <div className="rounded-[4.5rem] md:rounded-[6.5rem] overflow-hidden relative aspect-[2/3] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.35)] hover:shadow-indigo-500/20 transition-all duration-700 bg-gradient-to-br from-indigo-950 via-purple-900 to-indigo-900 border-8 border-slate-50 flex flex-col items-center justify-center p-12 text-center">
+                
+                {/* Visual Poster Mockup in Details */}
+                <Rocket className="w-24 h-24 md:w-48 md:h-48 text-amber-400 mb-8 animate-bounce-slow" />
+                <h2 className="text-6xl md:text-[120px] font-black text-white italic tracking-tighter uppercase leading-none mb-6">
+                  Plan <br/><span className="text-amber-400">{product.id === 'plan-a' ? 'A' : 'B'}</span>
+                </h2>
+                <div className="bg-white/10 backdrop-blur-md px-10 py-6 rounded-3xl border border-white/20">
+                   <p className="text-amber-300 font-black text-xl md:text-3xl uppercase tracking-tighter">"Idea जिंदगी बदल देगी..!!"</p>
+                </div>
+
                 {product.id === 'plan-b' && (
-                  <div className="absolute top-10 left-10 md:top-20 md:left-20 bg-indigo-600 text-white px-8 py-2.5 md:px-16 md:py-7 rounded-full font-black text-[12px] md:text-3xl uppercase tracking-widest shadow-2xl z-20 border-2 border-white/20">
-                    Elite Bundle
+                  <div className="absolute top-10 left-10 bg-indigo-600 text-white px-8 py-3 rounded-full font-black text-[12px] md:text-xl uppercase tracking-widest shadow-2xl z-20 border-2 border-white/20">
+                    Elite Startup Bundle
                   </div>
                 )}
               </div>
@@ -94,14 +95,14 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                   <TrendingUp className="w-10 h-10 md:w-20 md:h-20 text-green-500 shrink-0" />
                   <div>
                     <p className="text-[10px] md:text-xl font-black text-slate-400 uppercase tracking-widest mb-1">Potential</p>
-                    <p className="text-sm md:text-3xl font-[900] text-slate-900 tracking-tighter">High Return</p>
+                    <p className="text-sm md:text-3xl font-[900] text-slate-900 tracking-tighter">High Growth</p>
                   </div>
                 </div>
                 <div className="bg-slate-50 p-7 md:p-14 rounded-[3rem] md:rounded-[4.5rem] flex items-center space-x-4 md:space-x-10 shadow-sm border border-slate-100">
                   <Package className="w-10 h-10 md:w-20 md:h-20 text-amber-500 shrink-0" />
                   <div>
-                    <p className="text-[10px] md:text-xl font-black text-slate-400 uppercase tracking-widest mb-1">Offer</p>
-                    <p className="text-sm md:text-3xl font-[900] text-slate-900 tracking-tighter">Lifetime</p>
+                    <p className="text-[10px] md:text-xl font-black text-slate-400 uppercase tracking-widest mb-1">Delivery</p>
+                    <p className="text-sm md:text-3xl font-[900] text-slate-900 tracking-tighter">Instant Access</p>
                   </div>
                 </div>
               </div>
@@ -110,6 +111,9 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
           <div className="flex flex-col pt-6 md:pt-14 space-y-12 md:space-y-24 items-center">
             <div className="space-y-6 md:space-y-12 text-center">
+              <div className="flex items-center justify-center gap-1 mb-4">
+                 {[1, 2, 3, 4, 5].map(s => <Star key={s} className="w-6 h-6 md:w-10 md:h-10 text-amber-400 fill-current" />)}
+              </div>
               <h1 className="text-5xl md:text-[130px] font-[1000] text-slate-900 leading-[0.8] tracking-tighter uppercase">
                 {product.name.split(' ')[0]} <br/>
                 <span className="text-indigo-600">{product.name.split(' ')[1]}</span>
@@ -121,8 +125,8 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
             <div className="bg-slate-50 p-10 md:p-24 rounded-[3.5rem] md:rounded-[7rem] w-full space-y-10 md:space-y-20 shadow-inner border border-slate-100 text-center flex flex-col items-center">
               <div className="flex flex-col items-center justify-center gap-4 text-center">
-                <span className="text-[12px] md:text-2xl font-black text-slate-400 uppercase tracking-[0.2em]">One-Time Fee</span>
-                <div className="flex flex-col items-center gap-2 md:gap-14">
+                <span className="text-[12px] md:text-2xl font-black text-slate-400 uppercase tracking-[0.2em]">Full Training Enrollment</span>
+                <div className="flex flex-col items-center gap-2 md:gap-8">
                   <span className="text-6xl md:text-[150px] font-[1000] text-indigo-600 tracking-tighter leading-none">₹{product.price.toFixed(0)}</span>
                   <span className="text-3xl md:text-6xl text-slate-300 line-through font-bold">₹{originalPrice}</span>
                 </div>
@@ -146,8 +150,8 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                   onClick={handleBuyNow}
                   className="w-full bg-indigo-600 hover:bg-slate-900 text-white py-7 md:py-16 rounded-[2.5rem] md:rounded-[5rem] text-xl md:text-[64px] font-[1000] transition-all shadow-[0_40px_80px_-20px_rgba(79,70,229,0.4)] active:scale-[0.98] flex items-center justify-center space-x-4 md:space-x-12 group"
                 >
-                  <Zap className="w-10 h-10 md:w-20 md:h-20 text-amber-400 fill-current group-hover:animate-pulse" />
-                  <span>BUY NOW</span>
+                  <Zap className="w-10 h-10 md:w-20 md:h-20 text-amber-400 fill-current group-hover/btn:animate-pulse" />
+                  <span>ENROLL NOW</span>
                 </button>
               </div>
             </div>
