@@ -26,13 +26,17 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       const file = e.target.files[0];
       setSelectedFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => setProofBase64(reader.result as string);
+      reader.onloadend = () => {
+        // Simple compression check
+        const result = reader.result as string;
+        setProofBase64(result);
+      };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSubmitProof = () => {
-    if (!selectedFile) return;
+  const handleSubmitProof = async () => {
+    if (!selectedFile || !proofBase64) return;
     setIsVerifying(true);
 
     const orderData = {
@@ -40,19 +44,23 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       name: localStorage.getItem('last_customer_name') || 'Unknown Customer',
       email: localStorage.getItem('last_customer_email') || 'N/A',
       product: cart.map(item => item.name).join(', '),
-      productIds: cart.map(item => item.id), // New: Storing IDs for 100% reliable access
+      productIds: cart.map(item => item.id),
       amount: total,
       date: new Date().toLocaleDateString(),
       status: 'pending',
       proofImage: proofBase64
     };
 
-    VaultDB.addOrder(orderData);
-
-    setTimeout(() => {
+    try {
+      // Must await for Supabase sync
+      await VaultDB.addOrder(orderData);
       clearCart();
       navigate('/thank-you');
-    }, 3000);
+    } catch (error) {
+      console.error("Order submission failed:", error);
+      alert("Something went wrong. Please try again.");
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -91,7 +99,7 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
              className={`w-full py-6 rounded-2xl font-black text-white uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${isVerifying ? 'bg-indigo-300' : selectedFile ? 'bg-blue-600 hover:bg-blue-700 shadow-xl' : 'bg-gray-200 cursor-not-allowed'}`}
            >
              {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-5 h-5 text-amber-400 fill-current" />}
-             <span>{isVerifying ? 'Encrypting...' : 'Complete Payment'}</span>
+             <span>{isVerifying ? 'Saving to Database...' : 'Complete Payment'}</span>
            </button>
         </div>
       </div>

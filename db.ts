@@ -13,12 +13,11 @@ const DB_KEYS = {
 };
 
 class VaultDB {
-  // Initialize Background Sync
-  static init() {
-    this.pullFromSupabase();
+  static async init() {
+    await this.pullFromSupabase();
   }
 
-  private static async pullFromSupabase() {
+  static async pullFromSupabase() {
     try {
       // Pull Products
       const { data: products } = await supabase.from('products').select('*');
@@ -51,15 +50,9 @@ class VaultDB {
     }
   }
 
-  private static safeSave(key: string, value: string): boolean {
-    try {
-      localStorage.setItem(key, value);
-      this.sync();
-      return true;
-    } catch (e) {
-      console.error("Database Save Error:", e);
-      return false;
-    }
+  private static sync() {
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new CustomEvent('vault_sync', { detail: { timestamp: Date.now() } }));
   }
 
   // Products
@@ -69,8 +62,10 @@ class VaultDB {
   }
 
   static async saveProducts(products: Product[]): Promise<boolean> {
-    const success = this.safeSave(DB_KEYS.PRODUCTS, JSON.stringify(products));
-    if (success) {
+    localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
+    this.sync();
+    
+    try {
       for (const p of products) {
         await supabase.from('products').upsert({
           id: p.id,
@@ -84,8 +79,11 @@ class VaultDB {
           download_url: p.downloadUrl
         });
       }
+      return true;
+    } catch (e) {
+      console.error("Supabase Product Save Error:", e);
+      return false;
     }
-    return success;
   }
 
   // Orders
@@ -98,13 +96,15 @@ class VaultDB {
     const orders = this.getOrders();
     const normalizedOrder = {
       ...order,
-      email: order.email?.toLowerCase().trim()
+      email: order.email?.toLowerCase().trim(),
+      created_at: new Date().toISOString()
     };
-    const updated = [normalizedOrder, ...orders];
-    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
+    
+    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([normalizedOrder, ...orders]));
+    this.sync();
 
     // Push to Supabase
-    await supabase.from('orders').insert({
+    const { error } = await supabase.from('orders').insert({
       id: normalizedOrder.id,
       name: normalizedOrder.name,
       email: normalizedOrder.email,
@@ -113,21 +113,19 @@ class VaultDB {
       amount: normalizedOrder.amount,
       date: normalizedOrder.date,
       status: normalizedOrder.status,
-      proof_image: normalizedOrder.proofImage
+      proof_image: normalizedOrder.proofImage,
+      created_at: normalizedOrder.created_at
     });
+
+    if (error) console.error("Supabase Order Insert Error:", error);
   }
 
   static async updateOrder(orderId: string, updates: any) {
     const orders = this.getOrders();
-    const updated = orders.map(o => {
-      if (o.id === orderId) {
-        const u = { ...o, ...updates };
-        if (u.email) u.email = u.email.toLowerCase().trim();
-        return u;
-      }
-      return o;
-    });
-    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(updated));
+    const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
+    
+    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(updated));
+    this.sync();
 
     // Push to Supabase
     await supabase.from('orders').update(updates).eq('id', orderId);
@@ -135,7 +133,9 @@ class VaultDB {
 
   static async deleteOrder(orderId: string) {
     const orders = this.getOrders().filter(o => o.id !== orderId);
-    this.safeSave(DB_KEYS.ORDERS, JSON.stringify(orders));
+    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
+    this.sync();
+    
     await supabase.from('orders').delete().eq('id', orderId);
   }
 
@@ -145,9 +145,10 @@ class VaultDB {
   }
 
   static async setBanner(url: string): Promise<boolean> {
-    const success = this.safeSave(DB_KEYS.BANNER, url);
+    localStorage.setItem(DB_KEYS.BANNER, url);
+    this.sync();
     await supabase.from('site_config').upsert({ key: 'banner', value: { url } });
-    return success;
+    return true;
   }
 
   static getPaymentConfig() {
@@ -162,19 +163,14 @@ class VaultDB {
     localStorage.setItem(DB_KEYS.QR_CODE, config.qr);
     localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
     localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
+    this.sync();
     
     await supabase.from('site_config').upsert({ key: 'payment', value: config });
-    this.sync();
     return true;
-  }
-
-  private static sync() {
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new CustomEvent('vault_sync', { detail: { timestamp: Date.now() } }));
   }
 }
 
-// Start auto-sync on load
+// Initial pull from Supabase
 VaultDB.init();
 
 export default VaultDB;
