@@ -28,13 +28,24 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
       <div className="p-1 md:p-1.5">
         <Link 
           to={`/product/${product.id}`} 
-          className="block relative aspect-[2/3] overflow-hidden rounded-[0.8rem] md:rounded-[1.2rem] bg-slate-100 flex flex-col items-center justify-center shadow-inner"
+          className="block relative aspect-[2/3] overflow-hidden rounded-[0.8rem] md:rounded-[1.2rem] bg-slate-900 flex flex-col items-center justify-center shadow-inner"
         >
-          <img 
-            src={product.image} 
-            alt={product.name} 
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          />
+          {product.image ? (
+            <img 
+              src={product.image} 
+              alt={product.name} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              onError={(e) => {
+                // If the specific Supabase image fails, show nothing or a very subtle placeholder
+                console.warn("Product image failed to load:", product.name);
+              }}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center p-4 text-center">
+              <Zap className="w-8 h-8 text-amber-400 mb-2 opacity-20" />
+              <p className="text-[10px] text-slate-500 font-black uppercase">Plan {product.id.split('-')[1]?.toUpperCase()}</p>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
         </Link>
       </div>

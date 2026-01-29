@@ -22,13 +22,27 @@ class VaultDB {
       // Pull Products
       const { data: products } = await supabase.from('products').select('*');
       if (products && products.length > 0) {
-        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
+        const mappedProducts = products.map(p => {
+          const defaultProduct = FEATURED_PRODUCTS.find(fp => fp.id === p.id);
+          return {
+            ...p,
+            longDescription: p.long_description || p.longDescription || defaultProduct?.longDescription,
+            downloadUrl: p.download_url || p.downloadUrl || defaultProduct?.downloadUrl,
+            image: p.image || defaultProduct?.image
+          };
+        });
+        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(mappedProducts));
       }
 
-      // Pull Orders
+      // Pull Orders with proper mapping
       const { data: orders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
       if (orders) {
-        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
+        const mappedOrders = orders.map(o => ({
+          ...o,
+          proofImage: o.proof_image || o.proofImage, // Translate DB snake_case to App camelCase
+          productIds: o.product_ids || o.productIds
+        }));
+        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(mappedOrders));
       }
 
       // Pull Config
@@ -100,10 +114,11 @@ class VaultDB {
       created_at: new Date().toISOString()
     };
     
+    // Optimistic local update
     localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([normalizedOrder, ...orders]));
     this.sync();
 
-    // Push to Supabase
+    // Push to Supabase with correct column names
     const { error } = await supabase.from('orders').insert({
       id: normalizedOrder.id,
       name: normalizedOrder.name,
@@ -113,7 +128,7 @@ class VaultDB {
       amount: normalizedOrder.amount,
       date: normalizedOrder.date,
       status: normalizedOrder.status,
-      proof_image: normalizedOrder.proofImage,
+      proof_image: normalizedOrder.proofImage, // Send as proof_image to DB
       created_at: normalizedOrder.created_at
     });
 
@@ -122,20 +137,23 @@ class VaultDB {
 
   static async updateOrder(orderId: string, updates: any) {
     const orders = this.getOrders();
-    const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
+    const dbUpdates: any = { ...updates };
     
+    // Map any camelCase updates back to snake_case for the DB call
+    if (updates.proofImage) dbUpdates.proof_image = updates.proofImage;
+    if (updates.productIds) dbUpdates.product_ids = updates.productIds;
+
+    const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
     localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(updated));
     this.sync();
 
-    // Push to Supabase
-    await supabase.from('orders').update(updates).eq('id', orderId);
+    await supabase.from('orders').update(dbUpdates).eq('id', orderId);
   }
 
   static async deleteOrder(orderId: string) {
     const orders = this.getOrders().filter(o => o.id !== orderId);
     localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
     this.sync();
-    
     await supabase.from('orders').delete().eq('id', orderId);
   }
 
@@ -164,13 +182,10 @@ class VaultDB {
     localStorage.setItem(DB_KEYS.RECIPIENT, config.recipient);
     localStorage.setItem(DB_KEYS.INSTRUCTIONS, config.instructions);
     this.sync();
-    
     await supabase.from('site_config').upsert({ key: 'payment', value: config });
     return true;
   }
 }
 
-// Initial pull from Supabase
 VaultDB.init();
-
 export default VaultDB;

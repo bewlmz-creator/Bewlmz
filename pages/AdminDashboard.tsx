@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import VaultDB from '../db';
+import { supabase } from '../lib/supabase';
 import { 
   Users, 
   User,
@@ -11,15 +12,14 @@ import {
   LogOut, 
   X,
   QrCode,
-  Upload,
   CheckCircle2,
   Trash2,
   Eye,
   Database,
-  Smartphone,
-  Check,
   RefreshCw,
-  Loader2
+  Loader2,
+  Check,
+  Zap
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -35,21 +35,50 @@ const AdminDashboard: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchLiveData = async () => {
-    setIsLoading(true);
+  const fetchLiveData = useCallback(async (showLoader = true) => {
+    if (showLoader) setIsLoading(true);
     await VaultDB.pullFromSupabase();
     setOrders(VaultDB.getOrders());
     setProducts(VaultDB.getProducts());
     setSiteBanner(VaultDB.getBanner());
     setPaymentConfig(VaultDB.getPaymentConfig());
-    setIsLoading(false);
-  };
+    if (showLoader) setIsLoading(false);
+  }, []);
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
     if (!isLoggedIn) { navigate('/admin-login'); return; }
+    
     fetchLiveData();
-  }, [navigate]);
+
+    // Set up Realtime Subscription for New Orders
+    const ordersChannel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'orders' },
+        (payload) => {
+          console.log('New order detected in Supabase:', payload.new);
+          // Gently refresh without a full UI blocker
+          fetchLiveData(false);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        () => fetchLiveData(false)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'orders' },
+        () => fetchLiveData(false)
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+    };
+  }, [navigate, fetchLiveData]);
 
   const handleSaveProduct = async () => {
     if (!editingProduct) return;
@@ -127,22 +156,28 @@ const AdminDashboard: React.FC = () => {
 
       <main className="flex-grow p-4 md:p-12 overflow-y-auto">
         <div className="mb-8 flex justify-between items-center">
-           <h2 className="text-3xl font-black uppercase tracking-tighter italic">
-            Admin <span className="text-blue-600">Dashboard</span>
-           </h2>
+           <div>
+            <h2 className="text-3xl font-black uppercase tracking-tighter italic">
+              Admin <span className="text-blue-600">Dashboard</span>
+            </h2>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 mt-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              Live Sync Active
+            </p>
+           </div>
            <button 
-             onClick={fetchLiveData}
+             onClick={() => fetchLiveData()}
              className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"
            >
              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-             <span>Sync Supabase</span>
+             <span>Manual Sync</span>
            </button>
         </div>
 
         {isLoading ? (
           <div className="h-96 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Connecting to Supabase...</p>
+             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Fetching Data...</p>
           </div>
         ) : (
           <>
@@ -160,7 +195,12 @@ const AdminDashboard: React.FC = () => {
                         <User className="w-8 h-8 text-slate-300" />
                       </div>
                       <div className="space-y-1">
-                        <p className="font-black text-slate-900 uppercase text-lg leading-none">{order.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-black text-slate-900 uppercase text-lg leading-none">{order.name}</p>
+                          {new Date(order.created_at).getTime() > Date.now() - 3600000 && (
+                            <span className="bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">New</span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 font-bold tracking-tight">{order.email} • <span className="text-indigo-600">₹{order.amount}</span></p>
                         <div className="flex items-center gap-2 pt-1">
                           <span className={`text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}>
@@ -168,6 +208,7 @@ const AdminDashboard: React.FC = () => {
                           </span>
                           <span className="text-[9px] text-slate-300 font-bold uppercase">{order.date}</span>
                         </div>
+                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tight truncate max-w-[200px]">{order.product}</p>
                       </div>
                     </div>
                     <div className="flex gap-3 w-full md:w-auto">
@@ -176,7 +217,10 @@ const AdminDashboard: React.FC = () => {
                           <Eye className="w-4 h-4" /> <span>Proof</span>
                         </button>
                       )}
-                      <button onClick={() => VaultDB.updateOrder(order.id, { status: 'verified' })} className={`flex-1 md:flex-none py-3 px-6 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-green-600 text-white shadow-lg'}`}>
+                      <button 
+                        onClick={() => VaultDB.updateOrder(order.id, { status: 'verified' })} 
+                        className={`flex-1 md:flex-none py-3 px-6 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-green-600 text-white shadow-lg shadow-green-600/20 active:scale-95 transition-all'}`}
+                      >
                         <CheckCircle2 className="w-4 h-4" /> <span>{order.status === 'verified' ? 'Approved' : 'Verify'}</span>
                       </button>
                       <button onClick={() => { if(confirm('Delete order?')) VaultDB.deleteOrder(order.id); }} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100">

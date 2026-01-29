@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { ArrowLeft, TrendingUp, Package, CheckCircle2, Zap, Star } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Package, CheckCircle2, Zap, Star, Rocket } from 'lucide-react';
 
 interface Props { addToCart: (product: Product) => void; }
 
@@ -12,7 +12,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
   const navigate = useNavigate();
   
   const [product, setProduct] = useState<Product | undefined>(() => {
-    const saved = localStorage.getItem('vault_products');
+    const saved = localStorage.getItem('bewlmz_db_products');
     if (saved) {
       const parsed = JSON.parse(saved) as Product[];
       return parsed.find(p => p.id === id);
@@ -22,14 +22,18 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
   useEffect(() => {
     const updateProduct = () => {
-      const savedProducts = localStorage.getItem('vault_products');
+      const savedProducts = localStorage.getItem('bewlmz_db_products');
       if (savedProducts) {
         const parsed = JSON.parse(savedProducts) as Product[];
         setProduct(parsed.find(p => p.id === id));
       }
     };
     window.addEventListener('storage', updateProduct);
-    return () => window.removeEventListener('storage', updateProduct);
+    window.addEventListener('vault_sync', updateProduct);
+    return () => {
+      window.removeEventListener('storage', updateProduct);
+      window.removeEventListener('vault_sync', updateProduct);
+    };
   }, [id]);
 
   if (!product) {
@@ -72,9 +76,22 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16">
           <div className="relative">
             <div className="lg:sticky lg:top-32">
-              <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden relative aspect-[2/3] shadow-2xl transition-all duration-700 bg-slate-100 border-4 border-slate-50 flex flex-col items-center justify-center p-0 text-center">
+              <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden relative aspect-[2/3] shadow-2xl transition-all duration-700 bg-slate-900 border-4 border-slate-50 flex flex-col items-center justify-center p-0 text-center">
                 
-                <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
+                {product.image ? (
+                  <img 
+                    src={product.image} 
+                    className="w-full h-full object-cover" 
+                    alt={product.name} 
+                  />
+                ) : (
+                   <div className="flex flex-col items-center justify-center p-8">
+                      <Rocket className="w-16 h-16 md:w-32 md:h-32 text-amber-400 mb-6 opacity-20" />
+                      <h2 className="text-4xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">
+                        {product.name}
+                      </h2>
+                   </div>
+                )}
 
                 <div className="absolute bottom-6 left-6 right-6 bg-white/20 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20">
                    <p className="text-white font-black text-xs md:text-lg uppercase tracking-tighter drop-shadow-md">"Idea जिंदगी बदल देगी..!!"</p>
@@ -107,7 +124,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
               </div>
               <h1 className="text-4xl md:text-8xl font-[1000] text-slate-900 leading-[0.85] tracking-tighter uppercase">
                 {product.name.split(' ')[0]} <br/>
-                <span className="text-indigo-600">{product.name.split(' ')[1]}</span>
+                <span className="text-indigo-600">{product.name.split(' ')[1] || ''}</span>
               </h1>
               <p className="text-base md:text-3xl font-bold text-slate-400 italic tracking-tight leading-tight max-w-xl">
                 "{product.description}"
