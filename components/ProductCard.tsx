@@ -2,7 +2,7 @@
 import React from 'react';
 import { Product } from '../types';
 import { Link, useNavigate } from 'react-router-dom';
-import { Star, Heart, Zap, Rocket } from 'lucide-react';
+import { Star, Zap } from 'lucide-react';
 
 interface Props {
   product: Product;
@@ -11,7 +11,6 @@ interface Props {
 }
 
 const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
-  const navigate = useNavigate();
   const originalPrice = Math.round(product.price * 2.5);
   const discount = 60;
 
@@ -31,18 +30,11 @@ const ProductCard: React.FC<Props> = ({ product, onBuyNow }) => {
           to={`/product/${product.id}`} 
           className="block relative aspect-[2/3] overflow-hidden rounded-[0.8rem] md:rounded-[1.2rem] bg-slate-100 flex flex-col items-center justify-center shadow-inner"
         >
-          {product.image ? (
-            <img 
-              src={product.image} 
-              alt={product.name} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-            />
-          ) : (
-             <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-indigo-950 flex flex-col items-center justify-center p-4">
-                <Rocket className="w-6 h-6 text-amber-400 mb-1" />
-                <h2 className="text-[10px] font-black text-white uppercase italic">Plan {product.id === 'plan-a' ? 'A' : 'B'}</h2>
-             </div>
-          )}
+          <img 
+            src={product.image} 
+            alt={product.name} 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors"></div>
         </Link>
       </div>

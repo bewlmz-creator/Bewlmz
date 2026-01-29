@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FEATURED_PRODUCTS } from '../constants';
 import { Product } from '../types';
-import { ArrowLeft, TrendingUp, Package, CheckCircle2, Zap, Rocket, Star } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Package, CheckCircle2, Zap, Star } from 'lucide-react';
 
 interface Props { addToCart: (product: Product) => void; }
 
@@ -74,16 +74,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
             <div className="lg:sticky lg:top-32">
               <div className="rounded-[2rem] md:rounded-[3rem] overflow-hidden relative aspect-[2/3] shadow-2xl transition-all duration-700 bg-slate-100 border-4 border-slate-50 flex flex-col items-center justify-center p-0 text-center">
                 
-                {product.image ? (
-                  <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8">
-                    <Rocket className="w-16 h-16 md:w-32 md:h-32 text-amber-400 mb-4 animate-bounce-slow" />
-                    <h2 className="text-4xl md:text-7xl font-black text-slate-900 italic tracking-tighter uppercase leading-none mb-4">
-                      Plan <br/><span className="text-amber-400">{product.id === 'plan-a' ? 'A' : 'B'}</span>
-                    </h2>
-                  </div>
-                )}
+                <img src={product.image} className="w-full h-full object-cover" alt={product.name} />
 
                 <div className="absolute bottom-6 left-6 right-6 bg-white/20 backdrop-blur-md px-4 py-3 rounded-xl border border-white/20">
                    <p className="text-white font-black text-xs md:text-lg uppercase tracking-tighter drop-shadow-md">"Idea जिंदगी बदल देगी..!!"</p>
