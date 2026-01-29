@@ -20,8 +20,8 @@ class VaultDB {
   static async pullFromSupabase() {
     try {
       // Pull Products
-      const { data: products } = await supabase.from('products').select('*');
-      if (products && products.length > 0) {
+      const { data: products, error: pError } = await supabase.from('products').select('*');
+      if (!pError && products && products.length > 0) {
         const mappedProducts = products.map(p => {
           const defaultProduct = FEATURED_PRODUCTS.find(fp => fp.id === p.id);
           return {
@@ -34,12 +34,12 @@ class VaultDB {
         localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(mappedProducts));
       }
 
-      // Pull Orders with proper mapping
-      const { data: orders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (orders) {
+      // Pull Orders
+      const { data: orders, error: oError } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (!oError && orders) {
         const mappedOrders = orders.map(o => ({
           ...o,
-          proofImage: o.proof_image || o.proofImage, // Translate DB snake_case to App camelCase
+          proofImage: o.proof_image || o.proofImage,
           productIds: o.product_ids || o.productIds
         }));
         localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(mappedOrders));
@@ -49,18 +49,18 @@ class VaultDB {
       const { data: configs } = await supabase.from('site_config').select('*');
       if (configs) {
         configs.forEach(cfg => {
-          if (cfg.key === 'banner') localStorage.setItem(DB_KEYS.BANNER, cfg.value.url);
-          if (cfg.key === 'payment') {
-            localStorage.setItem(DB_KEYS.QR_CODE, cfg.value.qr);
-            localStorage.setItem(DB_KEYS.RECIPIENT, cfg.value.recipient);
-            localStorage.setItem(DB_KEYS.INSTRUCTIONS, cfg.value.instructions);
+          if (cfg.key === 'banner' && cfg.value?.url) localStorage.setItem(DB_KEYS.BANNER, cfg.value.url);
+          if (cfg.key === 'payment' && cfg.value) {
+            localStorage.setItem(DB_KEYS.QR_CODE, cfg.value.qr || DEFAULT_QR_CODE);
+            localStorage.setItem(DB_KEYS.RECIPIENT, cfg.value.recipient || 'Ranjit Rishidev');
+            localStorage.setItem(DB_KEYS.INSTRUCTIONS, cfg.value.instructions || '');
           }
         });
       }
 
       this.sync();
     } catch (e) {
-      console.warn("Supabase Sync Failed:", e);
+      console.error("Supabase Sync Failed:", e);
     }
   }
 
@@ -69,7 +69,6 @@ class VaultDB {
     window.dispatchEvent(new CustomEvent('vault_sync', { detail: { timestamp: Date.now() } }));
   }
 
-  // Products
   static getProducts(): Product[] {
     const data = localStorage.getItem(DB_KEYS.PRODUCTS);
     return data ? JSON.parse(data) : FEATURED_PRODUCTS;
@@ -95,51 +94,53 @@ class VaultDB {
       }
       return true;
     } catch (e) {
-      console.error("Supabase Product Save Error:", e);
+      console.error("Product Save Error:", e);
       return false;
     }
   }
 
-  // Orders
   static getOrders(): any[] {
     const data = localStorage.getItem(DB_KEYS.ORDERS);
     return data ? JSON.parse(data) : [];
   }
 
-  static async addOrder(order: any) {
-    const orders = this.getOrders();
+  static async addOrder(order: any): Promise<boolean> {
     const normalizedOrder = {
       ...order,
       email: order.email?.toLowerCase().trim(),
       created_at: new Date().toISOString()
     };
     
-    // Optimistic local update
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([normalizedOrder, ...orders]));
-    this.sync();
-
-    // Push to Supabase with correct column names
-    const { error } = await supabase.from('orders').insert({
+    const payload = {
       id: normalizedOrder.id,
       name: normalizedOrder.name,
       email: normalizedOrder.email,
       product: normalizedOrder.product,
-      product_ids: normalizedOrder.productIds,
+      product_ids: Array.isArray(normalizedOrder.productIds) ? normalizedOrder.productIds : [normalizedOrder.productIds],
       amount: normalizedOrder.amount,
       date: normalizedOrder.date,
       status: normalizedOrder.status,
-      proof_image: normalizedOrder.proofImage, // Send as proof_image to DB
+      proof_image: normalizedOrder.proofImage,
       created_at: normalizedOrder.created_at
-    });
+    };
 
-    if (error) console.error("Supabase Order Insert Error:", error);
+    const { error } = await supabase.from('orders').insert(payload);
+
+    if (error) {
+      console.error("Order Insert Error:", error.message);
+      return false;
+    }
+
+    const orders = this.getOrders();
+    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([normalizedOrder, ...orders]));
+    this.sync();
+    return true;
   }
 
   static async updateOrder(orderId: string, updates: any) {
     const orders = this.getOrders();
     const dbUpdates: any = { ...updates };
     
-    // Map any camelCase updates back to snake_case for the DB call
     if (updates.proofImage) dbUpdates.proof_image = updates.proofImage;
     if (updates.productIds) dbUpdates.product_ids = updates.productIds;
 
@@ -157,7 +158,6 @@ class VaultDB {
     await supabase.from('orders').delete().eq('id', orderId);
   }
 
-  // Site Config
   static getBanner(): string {
     return localStorage.getItem(DB_KEYS.BANNER) || HERO_BANNER;
   }

@@ -19,7 +19,8 @@ import {
   RefreshCw,
   Loader2,
   Check,
-  Zap
+  Zap,
+  Globe
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -34,6 +35,7 @@ const AdminDashboard: React.FC = () => {
   const [viewingProof, setViewingProof] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
 
   const fetchLiveData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
@@ -51,29 +53,21 @@ const AdminDashboard: React.FC = () => {
     
     fetchLiveData();
 
-    // Set up Realtime Subscription for New Orders
+    // Set up Realtime Subscription for all changes
     const ordersChannel = supabase
-      .channel('admin-orders-realtime')
+      .channel('admin-db-changes')
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'orders' },
+        { event: '*', schema: 'public', table: 'orders' },
         (payload) => {
-          console.log('New order detected in Supabase:', payload.new);
-          // Gently refresh without a full UI blocker
+          console.log('Realtime Order Event:', payload.eventType, payload.new);
           fetchLiveData(false);
         }
       )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'orders' },
-        () => fetchLiveData(false)
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'orders' },
-        () => fetchLiveData(false)
-      )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Supabase Realtime Status:', status);
+        setIsOnline(status === 'SUBSCRIBED');
+      });
 
     return () => {
       supabase.removeChannel(ordersChannel);
@@ -155,29 +149,35 @@ const AdminDashboard: React.FC = () => {
       </aside>
 
       <main className="flex-grow p-4 md:p-12 overflow-y-auto">
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
            <div>
             <h2 className="text-3xl font-black uppercase tracking-tighter italic">
               Admin <span className="text-blue-600">Dashboard</span>
             </h2>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 mt-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              Live Sync Active
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                {isOnline ? 'Realtime Connected' : 'Realtime Offline'}
+                <span className="opacity-30">•</span>
+                Vercel Deploy
+              </p>
+            </div>
            </div>
-           <button 
-             onClick={() => fetchLiveData()}
-             className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"
-           >
-             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-             <span>Manual Sync</span>
-           </button>
+           <div className="flex gap-2">
+             <button 
+               onClick={() => fetchLiveData()}
+               className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"
+             >
+               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+               <span>Sync Now</span>
+             </button>
+           </div>
         </div>
 
         {isLoading ? (
           <div className="h-96 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Fetching Data...</p>
+             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Accessing Cloud Database...</p>
           </div>
         ) : (
           <>
@@ -185,8 +185,8 @@ const AdminDashboard: React.FC = () => {
               <div className="grid gap-6 max-w-5xl">
                 {orders.length === 0 ? (
                   <div className="bg-white p-20 rounded-[3rem] border border-slate-200 text-center">
-                     <Users className="w-16 h-16 text-slate-100 mx-auto mb-4" />
-                     <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No customer orders yet.</p>
+                     <Globe className="w-16 h-16 text-slate-100 mx-auto mb-4" />
+                     <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Cloud Database is Empty.</p>
                   </div>
                 ) : orders.map(order => (
                   <div key={order.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row items-center justify-between shadow-sm hover:shadow-md transition-shadow gap-6 animate-fade-in">
@@ -198,7 +198,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <p className="font-black text-slate-900 uppercase text-lg leading-none">{order.name}</p>
                           {new Date(order.created_at).getTime() > Date.now() - 3600000 && (
-                            <span className="bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">New</span>
+                            <span className="bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-lg shadow-blue-500/30">Just Now</span>
                           )}
                         </div>
                         <p className="text-xs text-slate-500 font-bold tracking-tight">{order.email} • <span className="text-indigo-600">₹{order.amount}</span></p>
@@ -221,9 +221,9 @@ const AdminDashboard: React.FC = () => {
                         onClick={() => VaultDB.updateOrder(order.id, { status: 'verified' })} 
                         className={`flex-1 md:flex-none py-3 px-6 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-green-600 text-white shadow-lg shadow-green-600/20 active:scale-95 transition-all'}`}
                       >
-                        <CheckCircle2 className="w-4 h-4" /> <span>{order.status === 'verified' ? 'Approved' : 'Verify'}</span>
+                        <CheckCircle2 className="w-4 h-4" /> <span>{order.status === 'verified' ? 'Verified' : 'Verify'}</span>
                       </button>
-                      <button onClick={() => { if(confirm('Delete order?')) VaultDB.deleteOrder(order.id); }} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100">
+                      <button onClick={() => { if(confirm('Delete order permanently?')) VaultDB.deleteOrder(order.id); }} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
@@ -236,7 +236,7 @@ const AdminDashboard: React.FC = () => {
               <div className="max-w-2xl space-y-8">
                 <div className="bg-white p-8 md:p-12 rounded-[3rem] border border-slate-200 space-y-8 shadow-sm">
                   <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">QR Code (Tap to Change)</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Merchant QR</label>
                     <div className="aspect-square bg-slate-50 rounded-[2.5rem] overflow-hidden border-2 border-slate-100 flex items-center justify-center relative group">
                       {paymentConfig.qr ? <img src={paymentConfig.qr} className="w-full h-full object-contain" /> : <QrCode className="w-24 h-24 text-slate-100" strokeWidth={1} />}
                       <input type="file" accept="image/*" onChange={(e) => {
@@ -249,7 +249,7 @@ const AdminDashboard: React.FC = () => {
                     <textarea value={paymentConfig.instructions} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} rows={3} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none" placeholder="Instructions..." />
                   </div>
                   <button onClick={handleSaveConfig} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all">
-                    Update Payment in Supabase
+                    Update Cloud Config
                   </button>
                 </div>
               </div>
@@ -265,7 +265,7 @@ const AdminDashboard: React.FC = () => {
                     }} className="absolute inset-0 opacity-0 cursor-pointer" />
                   </div>
                   <button onClick={handleSaveBanner} className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all">
-                    Update Global Banner
+                    Update Site Banner
                   </button>
                 </div>
               </div>
@@ -283,7 +283,7 @@ const AdminDashboard: React.FC = () => {
                       <span className="text-blue-600 font-black">₹{p.price}</span>
                     </div>
                     <button onClick={() => setEditingProduct(p)} className="w-full py-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">
-                       Edit Training Link
+                       Modify Details
                     </button>
                   </div>
                 ))}
@@ -297,7 +297,7 @@ const AdminDashboard: React.FC = () => {
         <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-xl rounded-[3rem] p-8 md:p-12 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase italic">Edit Product</h2>
+              <h2 className="text-2xl font-black uppercase italic">Edit Cloud Product</h2>
               <button onClick={() => setEditingProduct(null)} className="p-2 hover:bg-slate-100 rounded-full"><X className="w-6 h-6" /></button>
             </div>
             <div className="space-y-6">
@@ -314,7 +314,7 @@ const AdminDashboard: React.FC = () => {
                </div>
                <button onClick={handleSaveProduct} disabled={isSaving} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">
                 {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                <span>Save Changes</span>
+                <span>Update Database</span>
               </button>
             </div>
           </div>

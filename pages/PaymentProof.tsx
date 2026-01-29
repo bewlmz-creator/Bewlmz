@@ -27,9 +27,24 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       setSelectedFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        // Simple compression check
-        const result = reader.result as string;
-        setProofBase64(result);
+        // Apply simple compression to prevent Supabase size limits
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1000;
+          if (width > height) { if (width > maxDim) { height *= maxDim / width; width = maxDim; } } 
+          else { if (height > maxDim) { width *= maxDim / height; height = maxDim; } }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            setProofBase64(canvas.toDataURL('image/jpeg', 0.6));
+          }
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     }
@@ -51,14 +66,14 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       proofImage: proofBase64
     };
 
-    try {
-      // Must await for Supabase sync
-      await VaultDB.addOrder(orderData);
+    // Must await for Supabase sync
+    const success = await VaultDB.addOrder(orderData);
+    
+    if (success) {
       clearCart();
       navigate('/thank-you');
-    } catch (error) {
-      console.error("Order submission failed:", error);
-      alert("Something went wrong. Please try again.");
+    } else {
+      alert("Failed to reach server. Please check your internet connection and try again.");
       setIsVerifying(false);
     }
   };
@@ -99,7 +114,7 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
              className={`w-full py-6 rounded-2xl font-black text-white uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${isVerifying ? 'bg-indigo-300' : selectedFile ? 'bg-blue-600 hover:bg-blue-700 shadow-xl' : 'bg-gray-200 cursor-not-allowed'}`}
            >
              {isVerifying ? <Loader2 className="w-6 h-6 animate-spin" /> : <Zap className="w-5 h-5 text-amber-400 fill-current" />}
-             <span>{isVerifying ? 'Saving to Database...' : 'Complete Payment'}</span>
+             <span>{isVerifying ? 'Connecting to Supabase...' : 'Complete Payment'}</span>
            </button>
         </div>
       </div>
