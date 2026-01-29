@@ -39,11 +39,16 @@ const AdminDashboard: React.FC = () => {
 
   const fetchLiveData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
+    
+    // Fetch orders directly from Supabase including the proof image
+    const { data: dbOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (dbOrders) setOrders(dbOrders);
+
     await VaultDB.pullFromSupabase();
-    setOrders(VaultDB.getOrders());
     setProducts(VaultDB.getProducts());
     setSiteBanner(VaultDB.getBanner());
     setPaymentConfig(VaultDB.getPaymentConfig());
+    
     if (showLoader) setIsLoading(false);
   }, []);
 
@@ -53,25 +58,12 @@ const AdminDashboard: React.FC = () => {
     
     fetchLiveData();
 
-    // Set up Realtime Subscription for all changes
     const ordersChannel = supabase
       .channel('admin-db-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders' },
-        (payload) => {
-          console.log('Realtime Order Event:', payload.eventType, payload.new);
-          fetchLiveData(false);
-        }
-      )
-      .subscribe((status) => {
-        console.log('Supabase Realtime Status:', status);
-        setIsOnline(status === 'SUBSCRIBED');
-      });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchLiveData(false))
+      .subscribe((status) => setIsOnline(status === 'SUBSCRIBED'));
 
-    return () => {
-      supabase.removeChannel(ordersChannel);
-    };
+    return () => { supabase.removeChannel(ordersChannel); };
   }, [navigate, fetchLiveData]);
 
   const handleSaveProduct = async () => {
@@ -88,12 +80,12 @@ const AdminDashboard: React.FC = () => {
 
   const handleSaveConfig = async () => {
     await VaultDB.setPaymentConfig(paymentConfig);
-    alert('Payment configuration saved to Supabase!');
+    alert('Payment configuration updated!');
   };
 
   const handleSaveBanner = async () => {
     await VaultDB.setBanner(siteBanner);
-    alert('Banner updated in Supabase!');
+    alert('Banner updated!');
   };
 
   const processAndCompressImage = (file: File, maxWidth = 800, callback: (result: string) => void) => {
@@ -111,7 +103,7 @@ const AdminDashboard: React.FC = () => {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          callback(canvas.toDataURL('image/jpeg', 0.7));
+          callback(canvas.toDataURL('image/jpeg', 0.6));
         }
       };
       img.src = e.target?.result as string;
@@ -133,11 +125,7 @@ const AdminDashboard: React.FC = () => {
             { id: 'payment', icon: QrCode, label: 'Payment' },
             { id: 'config', icon: Layout, label: 'Banner' }
           ].map((tab) => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)} 
-              className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-white/5'}`}
-            >
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as any)} className={`w-full p-4 rounded-xl flex items-center gap-3 transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-lg' : 'hover:bg-white/5'}`}>
               <tab.icon className="w-5 h-5" />
               <span className="hidden md:block font-bold text-xs uppercase tracking-widest">{tab.label}</span>
             </button>
@@ -151,33 +139,22 @@ const AdminDashboard: React.FC = () => {
       <main className="flex-grow p-4 md:p-12 overflow-y-auto">
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
            <div>
-            <h2 className="text-3xl font-black uppercase tracking-tighter italic">
-              Admin <span className="text-blue-600">Dashboard</span>
-            </h2>
+            <h2 className="text-3xl font-black uppercase tracking-tighter italic">Admin <span className="text-blue-600">Dashboard</span></h2>
             <div className="flex items-center gap-2 mt-1">
               <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                {isOnline ? 'Realtime Connected' : 'Realtime Offline'}
-                <span className="opacity-30">•</span>
-                Vercel Deploy
-              </p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{isOnline ? 'Realtime Live' : 'Offline'}</p>
             </div>
            </div>
-           <div className="flex gap-2">
-             <button 
-               onClick={() => fetchLiveData()}
-               className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500"
-             >
-               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-               <span>Sync Now</span>
-             </button>
-           </div>
+           <button onClick={() => fetchLiveData()} className="p-3 bg-white border border-slate-200 rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+             <span>Sync</span>
+           </button>
         </div>
 
         {isLoading ? (
           <div className="h-96 flex flex-col items-center justify-center space-y-4">
              <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Accessing Cloud Database...</p>
+             <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Loading Cloud Data...</p>
           </div>
         ) : (
           <>
@@ -185,47 +162,27 @@ const AdminDashboard: React.FC = () => {
               <div className="grid gap-6 max-w-5xl">
                 {orders.length === 0 ? (
                   <div className="bg-white p-20 rounded-[3rem] border border-slate-200 text-center">
-                     <Globe className="w-16 h-16 text-slate-100 mx-auto mb-4" />
-                     <p className="text-slate-400 font-black uppercase tracking-widest text-xs">Cloud Database is Empty.</p>
+                     <p className="text-slate-400 font-black uppercase tracking-widest text-xs">No Orders Found.</p>
                   </div>
                 ) : orders.map(order => (
-                  <div key={order.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row items-center justify-between shadow-sm hover:shadow-md transition-shadow gap-6 animate-fade-in">
+                  <div key={order.id} className="bg-white p-6 md:p-8 rounded-[2rem] border border-slate-200 flex flex-col md:flex-row items-center justify-between shadow-sm gap-6">
                     <div className="flex items-center gap-6 w-full">
-                      <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center shrink-0 border border-slate-100">
-                        <User className="w-8 h-8 text-slate-300" />
-                      </div>
+                      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100"><User className="w-6 h-6 text-slate-300" /></div>
                       <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-black text-slate-900 uppercase text-lg leading-none">{order.name}</p>
-                          {new Date(order.created_at).getTime() > Date.now() - 3600000 && (
-                            <span className="bg-blue-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-lg shadow-blue-500/30">Just Now</span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 font-bold tracking-tight">{order.email} • <span className="text-indigo-600">₹{order.amount}</span></p>
+                        <p className="font-black text-slate-900 uppercase text-lg">{order.name}</p>
+                        <p className="text-xs text-slate-500 font-bold">{order.email} • <span className="text-indigo-600">₹{order.amount}</span></p>
                         <div className="flex items-center gap-2 pt-1">
-                          <span className={`text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600 border border-green-200' : 'bg-amber-100 text-amber-600 border border-amber-200'}`}>
-                            {order.status}
-                          </span>
+                          <span className={`text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>{order.status}</span>
                           <span className="text-[9px] text-slate-300 font-bold uppercase">{order.date}</span>
                         </div>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tight truncate max-w-[200px]">{order.product}</p>
                       </div>
                     </div>
                     <div className="flex gap-3 w-full md:w-auto">
-                      {order.proofImage && (
-                        <button onClick={() => setViewingProof(order.proofImage)} className="flex-1 md:flex-none py-3 px-6 bg-slate-900 text-white rounded-xl hover:bg-slate-800 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                          <Eye className="w-4 h-4" /> <span>Proof</span>
-                        </button>
+                      {order.proof_image && (
+                        <button onClick={() => setViewingProof(order.proof_image)} className="flex-1 md:flex-none py-3 px-6 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest">Proof</button>
                       )}
-                      <button 
-                        onClick={() => VaultDB.updateOrder(order.id, { status: 'verified' })} 
-                        className={`flex-1 md:flex-none py-3 px-6 rounded-xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-green-600 text-white shadow-lg shadow-green-600/20 active:scale-95 transition-all'}`}
-                      >
-                        <CheckCircle2 className="w-4 h-4" /> <span>{order.status === 'verified' ? 'Verified' : 'Verify'}</span>
-                      </button>
-                      <button onClick={() => { if(confirm('Delete order permanently?')) VaultDB.deleteOrder(order.id); }} className="p-3 bg-red-50 text-red-500 rounded-xl hover:bg-red-100">
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <button onClick={() => VaultDB.updateOrder(order.id, { status: 'verified' })} className={`flex-1 md:flex-none py-3 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-green-600 text-white'}`}>Verify</button>
+                      <button onClick={() => { if(confirm('Delete?')) VaultDB.deleteOrder(order.id); }} className="p-3 bg-red-50 text-red-500 rounded-xl"><Trash2 className="w-5 h-5" /></button>
                     </div>
                   </div>
                 ))}
@@ -233,58 +190,38 @@ const AdminDashboard: React.FC = () => {
             )}
 
             {activeTab === 'payment' && (
-              <div className="max-w-2xl space-y-8">
-                <div className="bg-white p-8 md:p-12 rounded-[3rem] border border-slate-200 space-y-8 shadow-sm">
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Merchant QR</label>
-                    <div className="aspect-square bg-slate-50 rounded-[2.5rem] overflow-hidden border-2 border-slate-100 flex items-center justify-center relative group">
-                      {paymentConfig.qr ? <img src={paymentConfig.qr} className="w-full h-full object-contain" /> : <QrCode className="w-24 h-24 text-slate-100" strokeWidth={1} />}
-                      <input type="file" accept="image/*" onChange={(e) => {
-                        if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 600, (qr) => setPaymentConfig(prev => ({ ...prev, qr })));
-                      }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <input value={paymentConfig.recipient} onChange={e => setPaymentConfig(prev => ({ ...prev, recipient: e.target.value }))} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" placeholder="Recipient Name" />
-                    <textarea value={paymentConfig.instructions} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} rows={3} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none" placeholder="Instructions..." />
-                  </div>
-                  <button onClick={handleSaveConfig} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all">
-                    Update Cloud Config
-                  </button>
+              <div className="max-w-xl bg-white p-8 rounded-[3rem] border border-slate-200 space-y-6">
+                <div className="aspect-square bg-slate-50 rounded-[2rem] overflow-hidden border-2 border-slate-100 relative">
+                  {paymentConfig.qr ? <img src={paymentConfig.qr} className="w-full h-full object-contain" /> : <QrCode className="w-24 h-24 text-slate-200" />}
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 600, (qr) => setPaymentConfig(prev => ({ ...prev, qr })));
+                  }} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
+                <input value={paymentConfig.recipient} onChange={e => setPaymentConfig(prev => ({ ...prev, recipient: e.target.value }))} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" placeholder="Recipient Name" />
+                <textarea value={paymentConfig.instructions} onChange={e => setPaymentConfig(prev => ({ ...prev, instructions: e.target.value }))} rows={3} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-sm outline-none" placeholder="Instructions..." />
+                <button onClick={handleSaveConfig} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">Update Payment Config</button>
               </div>
             )}
 
             {activeTab === 'config' && (
-              <div className="max-w-2xl space-y-8">
-                <div className="bg-white p-8 md:p-12 rounded-[3rem] border border-slate-200 space-y-8 shadow-sm">
-                  <div className="aspect-[12/5] bg-slate-50 rounded-[2rem] overflow-hidden border-2 border-slate-100 relative group">
-                    <img src={siteBanner} className="w-full h-full object-cover" />
-                    <input type="file" accept="image/*" onChange={(e) => {
-                      if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 1200, setSiteBanner);
-                    }} className="absolute inset-0 opacity-0 cursor-pointer" />
-                  </div>
-                  <button onClick={handleSaveBanner} className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all">
-                    Update Site Banner
-                  </button>
+              <div className="max-w-xl bg-white p-8 rounded-[3rem] border border-slate-200 space-y-6">
+                <div className="aspect-[12/5] bg-slate-50 rounded-[2rem] overflow-hidden border-2 border-slate-100 relative">
+                  <img src={siteBanner} className="w-full h-full object-cover" />
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 1200, setSiteBanner);
+                  }} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
+                <button onClick={handleSaveBanner} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl">Update Site Banner</button>
               </div>
             )}
 
             {activeTab === 'products' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
                 {products.map(p => (
-                  <div key={p.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-200 space-y-4 shadow-sm group hover:border-blue-200 transition-all">
-                    <div className="aspect-[2/3] bg-slate-50 rounded-2xl overflow-hidden relative">
-                      <img src={p.image} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                    </div>
-                    <div className="flex justify-between items-center px-2">
-                      <h3 className="font-black uppercase text-xl text-slate-900">{p.name}</h3>
-                      <span className="text-blue-600 font-black">₹{p.price}</span>
-                    </div>
-                    <button onClick={() => setEditingProduct(p)} className="w-full py-4 bg-slate-900 hover:bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all">
-                       Modify Details
-                    </button>
+                  <div key={p.id} className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4">
+                    <div className="aspect-[2/3] bg-slate-50 rounded-2xl overflow-hidden"><img src={p.image} className="w-full h-full object-cover" /></div>
+                    <div className="flex justify-between items-center"><h3 className="font-black uppercase text-xl">{p.name}</h3><span className="text-blue-600 font-black">₹{p.price}</span></div>
+                    <button onClick={() => setEditingProduct(p)} className="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest">Edit Details</button>
                   </div>
                 ))}
               </div>
@@ -295,36 +232,28 @@ const AdminDashboard: React.FC = () => {
 
       {editingProduct && (
         <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-xl rounded-[3rem] p-8 md:p-12 space-y-8 shadow-2xl overflow-y-auto max-h-[90vh]">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-black uppercase italic">Edit Cloud Product</h2>
-              <button onClick={() => setEditingProduct(null)} className="p-2 hover:bg-slate-100 rounded-full"><X className="w-6 h-6" /></button>
+          <div className="bg-white w-full max-w-lg rounded-[3rem] p-8 space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center"><h2 className="text-2xl font-black uppercase italic">Edit Product</h2><button onClick={() => setEditingProduct(null)}><X /></button></div>
+            <div className="aspect-[2/3] w-24 bg-slate-50 rounded-2xl overflow-hidden mx-auto relative">
+              <img src={editingProduct.image} className="w-full h-full object-cover" />
+              <input type="file" accept="image/*" onChange={(e) => {
+                if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 800, (res) => setEditingProduct({...editingProduct, image: res}));
+              }} className="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
-            <div className="space-y-6">
-               <div className="relative group mx-auto w-32 aspect-[2/3] bg-slate-50 rounded-[2rem] overflow-hidden border-4 border-slate-100">
-                  <img src={editingProduct.image} className="w-full h-full object-cover" />
-                  <input type="file" accept="image/*" onChange={(e) => {
-                    if(e.target.files?.[0]) processAndCompressImage(e.target.files[0], 800, (res) => setEditingProduct({...editingProduct, image: res}));
-                  }} className="absolute inset-0 opacity-0 cursor-pointer" />
-               </div>
-               <div className="space-y-4">
-                  <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" />
-                  <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" />
-                  <input value={editingProduct.downloadUrl} onChange={e => setEditingProduct({...editingProduct, downloadUrl: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-xs outline-none" placeholder="Video Course Link" />
-               </div>
-               <button onClick={handleSaveProduct} disabled={isSaving} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">
-                {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                <span>Update Database</span>
-              </button>
-            </div>
+            <input value={editingProduct.name} onChange={e => setEditingProduct({...editingProduct, name: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" />
+            <input type="number" value={editingProduct.price} onChange={e => setEditingProduct({...editingProduct, price: Number(e.target.value)})} className="w-full p-4 bg-slate-50 border rounded-2xl font-black text-lg outline-none" />
+            <input value={editingProduct.downloadUrl} onChange={e => setEditingProduct({...editingProduct, downloadUrl: e.target.value})} className="w-full p-4 bg-slate-50 border rounded-2xl font-bold text-xs outline-none" placeholder="Video Course Link" />
+            <button onClick={handleSaveProduct} disabled={isSaving} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2">
+              {isSaving && <Loader2 className="animate-spin" />} Save to Cloud
+            </button>
           </div>
         </div>
       )}
 
       {viewingProof && (
-        <div className="fixed inset-0 z-[110] bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-4" onClick={() => setViewingProof(null)}>
-          <img src={viewingProof} className="max-w-xl w-full max-h-[80vh] object-contain rounded-[3rem] shadow-2xl border-4 border-white/10" />
-          <button onClick={() => setViewingProof(null)} className="mt-8 px-10 py-5 bg-white text-slate-900 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl">Close Preview</button>
+        <div className="fixed inset-0 z-[110] bg-slate-900/95 flex flex-col items-center justify-center p-4" onClick={() => setViewingProof(null)}>
+          <img src={viewingProof} className="max-w-xl w-full max-h-[80vh] object-contain rounded-3xl" />
+          <button className="mt-8 px-10 py-5 bg-white text-slate-900 rounded-2xl font-black uppercase text-xs tracking-widest">Close</button>
         </div>
       )}
     </div>

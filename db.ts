@@ -14,42 +14,42 @@ const DB_KEYS = {
 
 class VaultDB {
   static async init() {
-    await this.pullFromSupabase();
+    try {
+      await this.pullFromSupabase();
+    } catch (e) {
+      console.warn("Initial sync failed, using local cache");
+    }
   }
 
   static async pullFromSupabase() {
     try {
-      // Pull Products
-      const { data: products, error: pError } = await supabase.from('products').select('*');
-      if (!pError && products && products.length > 0) {
-        const mappedProducts = products.map(p => {
-          const defaultProduct = FEATURED_PRODUCTS.find(fp => fp.id === p.id);
-          return {
-            ...p,
-            longDescription: p.long_description || p.longDescription || defaultProduct?.longDescription,
-            downloadUrl: p.download_url || p.downloadUrl || defaultProduct?.downloadUrl,
-            image: p.image || defaultProduct?.image
-          };
-        });
-        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(mappedProducts));
+      // 1. Pull Products
+      const { data: products } = await supabase.from('products').select('*');
+      if (products && products.length > 0) {
+        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
       }
 
-      // Pull Orders
-      const { data: orders, error: oError } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (!oError && orders) {
-        const mappedOrders = orders.map(o => ({
-          ...o,
-          proofImage: o.proof_image || o.proofImage,
-          productIds: o.product_ids || o.productIds
-        }));
-        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(mappedOrders));
+      // 2. Pull Orders (Exclude proof_image from localStorage to avoid quota limits)
+      const { data: orders } = await supabase.from('orders')
+        .select('id, name, email, product, product_ids, amount, date, status, created_at')
+        .order('created_at', { ascending: false });
+      
+      if (orders) {
+        try {
+          localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
+        } catch (quotaError) {
+          console.warn("Storage quota exceeded, keeping only latest orders locally");
+          localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders.slice(0, 10)));
+        }
       }
 
-      // Pull Config
+      // 3. Pull Config
       const { data: configs } = await supabase.from('site_config').select('*');
       if (configs) {
         configs.forEach(cfg => {
-          if (cfg.key === 'banner' && cfg.value?.url) localStorage.setItem(DB_KEYS.BANNER, cfg.value.url);
+          if (cfg.key === 'banner' && cfg.value?.url) {
+            localStorage.setItem(DB_KEYS.BANNER, cfg.value.url);
+          }
           if (cfg.key === 'payment' && cfg.value) {
             localStorage.setItem(DB_KEYS.QR_CODE, cfg.value.qr || DEFAULT_QR_CODE);
             localStorage.setItem(DB_KEYS.RECIPIENT, cfg.value.recipient || 'Ranjit Rishidev');
@@ -71,13 +71,15 @@ class VaultDB {
 
   static getProducts(): Product[] {
     const data = localStorage.getItem(DB_KEYS.PRODUCTS);
-    return data ? JSON.parse(data) : FEATURED_PRODUCTS;
+    if (!data) return FEATURED_PRODUCTS;
+    try {
+      return JSON.parse(data);
+    } catch {
+      return FEATURED_PRODUCTS;
+    }
   }
 
   static async saveProducts(products: Product[]): Promise<boolean> {
-    localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
-    this.sync();
-    
     try {
       for (const p of products) {
         await supabase.from('products').upsert({
@@ -92,9 +94,10 @@ class VaultDB {
           download_url: p.downloadUrl
         });
       }
+      localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
+      this.sync();
       return true;
     } catch (e) {
-      console.error("Product Save Error:", e);
       return false;
     }
   }
@@ -105,57 +108,50 @@ class VaultDB {
   }
 
   static async addOrder(order: any): Promise<boolean> {
-    const normalizedOrder = {
-      ...order,
-      email: order.email?.toLowerCase().trim(),
-      created_at: new Date().toISOString()
-    };
-    
-    const payload = {
-      id: normalizedOrder.id,
-      name: normalizedOrder.name,
-      email: normalizedOrder.email,
-      product: normalizedOrder.product,
-      product_ids: Array.isArray(normalizedOrder.productIds) ? normalizedOrder.productIds : [normalizedOrder.productIds],
-      amount: normalizedOrder.amount,
-      date: normalizedOrder.date,
-      status: normalizedOrder.status,
-      proof_image: normalizedOrder.proofImage,
-      created_at: normalizedOrder.created_at
-    };
+    try {
+      const payload = {
+        id: order.id,
+        name: order.name,
+        email: order.email?.toLowerCase().trim(),
+        product: order.product,
+        product_ids: Array.isArray(order.productIds) ? order.productIds : [order.productIds],
+        amount: order.amount,
+        date: order.date,
+        status: order.status,
+        proof_image: order.proofImage,
+        created_at: new Date().toISOString()
+      };
 
-    const { error } = await supabase.from('orders').insert(payload);
+      const { error } = await supabase.from('orders').insert(payload);
+      if (error) throw error;
 
-    if (error) {
-      console.error("Order Insert Error:", error.message);
+      // Update local cache without the heavy image
+      const { proof_image, ...lightOrder } = payload;
+      const orders = this.getOrders();
+      try {
+        localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([lightOrder, ...orders.slice(0, 49)]));
+      } catch (e) { /* Ignore quota if local save fails */ }
+      
+      this.sync();
+      return true;
+    } catch (e) {
+      console.error("Order Insert Error:", e);
       return false;
     }
-
-    const orders = this.getOrders();
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify([normalizedOrder, ...orders]));
-    this.sync();
-    return true;
   }
 
   static async updateOrder(orderId: string, updates: any) {
-    const orders = this.getOrders();
     const dbUpdates: any = { ...updates };
-    
     if (updates.proofImage) dbUpdates.proof_image = updates.proofImage;
     if (updates.productIds) dbUpdates.product_ids = updates.productIds;
 
-    const updated = orders.map(o => o.id === orderId ? { ...o, ...updates } : o);
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(updated));
-    this.sync();
-
     await supabase.from('orders').update(dbUpdates).eq('id', orderId);
+    await this.pullFromSupabase();
   }
 
   static async deleteOrder(orderId: string) {
-    const orders = this.getOrders().filter(o => o.id !== orderId);
-    localStorage.setItem(DB_KEYS.ORDERS, JSON.stringify(orders));
-    this.sync();
     await supabase.from('orders').delete().eq('id', orderId);
+    await this.pullFromSupabase();
   }
 
   static getBanner(): string {
@@ -173,7 +169,7 @@ class VaultDB {
     return {
       qr: localStorage.getItem(DB_KEYS.QR_CODE) || DEFAULT_QR_CODE,
       recipient: localStorage.getItem(DB_KEYS.RECIPIENT) || 'Ranjit Rishidev',
-      instructions: localStorage.getItem(DB_KEYS.INSTRUCTIONS) || "ये QR CODE को Scan करके पेमेंट करें। \nपेमेंट के बाद 'Proceed Payment' बटन दबाएं।"
+      instructions: localStorage.getItem(DB_KEYS.INSTRUCTIONS) || "ये QR CODE को Scan करके पेमेंट करें।"
     };
   }
 
