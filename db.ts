@@ -123,7 +123,10 @@ class VaultDB {
       };
 
       const { error } = await supabase.from('orders').insert(payload);
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Insert Error detail:", error);
+        return false;
+      }
 
       // Update local cache without the heavy image
       const { proof_image, ...lightOrder } = payload;
@@ -135,7 +138,7 @@ class VaultDB {
       this.sync();
       return true;
     } catch (e) {
-      console.error("Order Insert Error:", e);
+      console.error("Critical addOrder Error:", e);
       return false;
     }
   }
