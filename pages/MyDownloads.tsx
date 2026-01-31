@@ -152,7 +152,7 @@ const MyDownloads: React.FC = () => {
           <div className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-full shadow-lg shadow-green-100">
              {isSyncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
              <span className="text-[10px] font-black uppercase tracking-widest">
-               {isSyncing ? 'Syncing Status...' : 'Your Premium Library'}
+               {isSyncing ? 'Syncing Status...' : 'Play Video'}
              </span>
           </div>
           <h1 className="text-5xl md:text-8xl font-black text-slate-900 uppercase tracking-tighter leading-none">

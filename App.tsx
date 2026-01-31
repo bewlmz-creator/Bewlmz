@@ -17,7 +17,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import VaultDB from './db';
 import { supabase } from './lib/supabase';
 import { CartItem, Product } from './types';
-import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download } from 'lucide-react';
+import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download, Play } from 'lucide-react';
 
 const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   const [isVerified, setIsVerified] = useState(false);
@@ -141,8 +141,8 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
                 isLinkActive('/my-downloads') ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 animate-pulse'
               }`}
             >
-              <Download className="w-5 h-5" />
-              My Library
+              <Play className="w-5 h-5" />
+              Play Video
             </Link>
           )}
         </div>
@@ -201,8 +201,8 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
                   isLinkActive('/my-downloads') ? 'bg-slate-900 text-white' : 'bg-green-600 text-white animate-bounce-slow'
                 }`}
               >
-                <Download className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                <span className="hidden xs:inline">My Library</span>
+                <Play className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                <span className="hidden xs:inline">Play Video</span>
               </Link>
             )}
             
