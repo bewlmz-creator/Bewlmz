@@ -15,6 +15,7 @@ import ProductDetails from './pages/ProductDetails';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import VaultDB from './db';
+import { supabase } from './lib/supabase';
 import { CartItem, Product } from './types';
 import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download } from 'lucide-react';
 
@@ -23,7 +24,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
-  const checkVerification = useCallback(() => {
+  const checkVerification = useCallback(async () => {
     const rawEmail = localStorage.getItem('last_customer_email');
     if (!rawEmail) {
       setIsVerified(false);
@@ -31,20 +32,54 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
     }
     
     const email = rawEmail.toLowerCase().trim();
+    
+    // First check local storage for speed
     const orders = VaultDB.getOrders();
-    const verified = orders.some((o: any) => 
+    let verified = orders.some((o: any) => 
       o.email?.toLowerCase().trim() === email && o.status === 'verified'
     );
+    
+    // If not verified in local, double check fresh data from Supabase
+    if (!verified) {
+      const { data } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('email', email)
+        .eq('status', 'verified');
+      
+      if (data && data.length > 0) {
+        verified = true;
+      }
+    }
     
     setIsVerified(verified);
   }, []);
 
   useEffect(() => {
     checkVerification();
+    
+    // Set up real-time listener for the navbar
+    const email = localStorage.getItem('last_customer_email')?.toLowerCase().trim();
+    let channel: any;
+
+    if (email) {
+      channel = supabase
+        .channel('navbar-verify-check')
+        .on('postgres_changes', 
+          { event: 'UPDATE', schema: 'public', table: 'orders', filter: `email=eq.${email}` }, 
+          async () => {
+            await VaultDB.pullFromSupabase(); // Sync database
+            checkVerification(); // Update navbar state
+          }
+        )
+        .subscribe();
+    }
+
     window.addEventListener('storage', checkVerification);
     window.addEventListener('vault_sync', checkVerification);
     
     return () => {
+      if (channel) supabase.removeChannel(channel);
       window.removeEventListener('storage', checkVerification);
       window.removeEventListener('vault_sync', checkVerification);
     };
@@ -75,7 +110,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
         />
       )}
 
-      {/* Side Drawer (Three line menu contents) */}
+      {/* Side Drawer */}
       <div className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[300] shadow-2xl transition-transform duration-300 transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
           <span className="text-xl font-black text-indigo-600 uppercase italic">Menu</span>
@@ -103,11 +138,11 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
             <Link 
               to="/my-downloads"
               className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
-                isLinkActive('/my-downloads') ? 'bg-slate-900 text-white' : 'bg-indigo-50 text-indigo-600'
+                isLinkActive('/my-downloads') ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 animate-pulse'
               }`}
             >
               <Download className="w-5 h-5" />
-              Downloads
+              My Library
             </Link>
           )}
         </div>
@@ -122,9 +157,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
       <nav className="fixed top-0 left-0 right-0 z-[200] bg-white border-b border-slate-100 shadow-sm h-16 md:h-20">
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between relative">
           
-          {/* LEFT: Menu Button (Mobile) / Links (Desktop) */}
           <div className="flex-1 flex items-center">
-            {/* Hamburger Button (Mobile Only) */}
             <button 
               onClick={() => setIsMenuOpen(true)}
               className="p-2 md:hidden text-slate-700 hover:text-indigo-600 transition-colors"
@@ -132,7 +165,6 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
               <Menu className="w-7 h-7" />
             </button>
 
-            {/* Desktop Horizontal Menu */}
             <div className="hidden md:flex items-center gap-2">
               {menuLinks.map((link) => (
                 <Link 
@@ -150,7 +182,6 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
             </div>
           </div>
 
-          {/* CENTER: Logo (Absolute Centered) */}
           <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
             <Link to="/" className="flex items-center space-x-1 md:space-x-2 group">
               <div className="bg-indigo-600 p-1 md:p-1.5 rounded-lg group-hover:rotate-12 transition-all shadow-md">
@@ -162,17 +193,16 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
             </Link>
           </div>
 
-          {/* RIGHT: Cart & Verified Icon */}
           <div className="flex-1 flex justify-end items-center gap-2 md:gap-4">
             {isVerified && (
               <Link 
                 to="/my-downloads" 
-                className={`hidden lg:flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all hover:bg-indigo-700 ${
-                  isLinkActive('/my-downloads') ? 'bg-slate-900 text-white' : 'bg-indigo-600 text-white'
+                className={`flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest transition-all hover:bg-green-700 shadow-md ${
+                  isLinkActive('/my-downloads') ? 'bg-slate-900 text-white' : 'bg-green-600 text-white animate-bounce-slow'
                 }`}
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>My Library</span>
+                <Download className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                <span className="hidden xs:inline">My Library</span>
               </Link>
             )}
             
@@ -216,7 +246,6 @@ const App: React.FC = () => {
     <HashRouter>
       <div className="min-h-screen flex flex-col bg-white selection:bg-indigo-100 selection:text-indigo-900">
         <Navbar cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)} />
-        {/* Main Content with proper Top Padding to prevent Banner overlap */}
         <main className="flex-grow pt-16 md:pt-20">
           <Routes>
             <Route path="/" element={<Home addToCart={addToCart} />} />
