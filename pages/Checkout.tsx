@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartItem } from '../types';
-import { Trash2, ShoppingBag, Zap, User, Mail, CheckCircle2 } from 'lucide-react';
+import { ShoppingBag, Zap, User, Mail, CheckCircle2, Trash2 } from 'lucide-react';
 
 interface Props {
   cart: CartItem[];
@@ -19,9 +19,9 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
     e.preventDefault();
     if (cart.length === 0) return;
     
-    // Save user info for the admin log later
+    // Save user info for identification
     localStorage.setItem('last_customer_name', name);
-    localStorage.setItem('last_customer_email', email);
+    localStorage.setItem('last_customer_email', email.toLowerCase().trim());
     
     navigate('/payment');
   };
@@ -43,7 +43,7 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
 
   return (
     <div className="max-w-7xl mx-auto py-8 md:py-12 px-4">
-      <h1 className="text-2xl md:text-4xl font-black mb-8 md:mb-12 uppercase tracking-tighter">Secure Checkout</h1>
+      <h1 className="text-2xl md:text-4xl font-black mb-8 md:mb-12 uppercase tracking-tighter">Instant App Access</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -54,14 +54,12 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
               {cart.map(item => (
                 <div key={item.id} className="p-4 md:p-8 flex items-center space-x-4 md:space-x-8">
                   <div className="relative w-24 h-36 md:w-48 md:h-72 rounded-xl md:rounded-[2.5rem] overflow-hidden bg-[#1a0033] shrink-0 shadow-lg">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-50" />
-                    <div className="absolute inset-0 flex flex-col justify-center p-2 md:p-4 z-10 bg-gradient-to-t from-indigo-900/60 to-transparent">
-                       <p className="mt-1 md:mt-3 text-amber-400 text-[6px] md:text-[11px] font-black leading-tight italic line-clamp-2">"Idea जिंदगी बदल देगी..!!"</p>
-                    </div>
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-grow min-w-0">
                     <h3 className="font-black text-sm md:text-3xl truncate uppercase tracking-tighter text-slate-900">{item.name}</h3>
                     <div className="mt-2 text-indigo-600 font-black text-lg md:text-4xl">₹{item.price.toFixed(0)}</div>
+                    <p className="mt-2 text-[10px] md:text-xs font-black text-green-600 uppercase tracking-widest bg-green-50 inline-block px-2 py-1 rounded-md">Direct App Delivery</p>
                   </div>
                   <button onClick={() => removeFromCart(item.id)} className="p-3 text-red-400 hover:bg-red-50 rounded-xl transition-colors shrink-0 group">
                     <Trash2 className="w-5 h-5 md:w-8 md:h-8 group-hover:scale-110 transition-transform" />
@@ -73,34 +71,35 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
         </div>
         <div className="space-y-6">
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-lg p-6 md:p-8">
-            <h2 className="font-black text-xl mb-6 text-gray-900 uppercase tracking-wide">Summary</h2>
+            <h2 className="font-black text-xl mb-6 text-gray-900 uppercase tracking-wide">Identity Details</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase italic">Isi email se aapka video app mein unlock hoga.</p>
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" />
+                    <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Delivery Email</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Access Email (Key)</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none" />
+                    <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                 </div>
               </div>
-              <div className="border-t border-gray-100 pt-6 space-y-3">
-                <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t border-gray-50">
+              <div className="border-t border-gray-100 pt-6">
+                <div className="flex justify-between text-2xl font-black text-gray-900 pb-6">
                   <span>Total</span>
                   <span className="text-indigo-600">₹{total.toFixed(0)}</span>
                 </div>
+                <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl md:rounded-[2rem] text-[14px] md:text-2xl font-black uppercase tracking-[0.15em] hover:bg-blue-700 transition-all flex items-center justify-center space-x-3 shadow-xl">
+                  <Zap className="w-5 h-5 md:w-7 md:h-7 fill-current text-amber-400" />
+                  <span>BUY NOW</span>
+                </button>
               </div>
-              <button type="submit" className="w-full bg-blue-600 text-white py-5 rounded-2xl md:rounded-[2rem] text-[14px] md:text-2xl font-black uppercase tracking-[0.15em] hover:bg-blue-700 transition-all flex items-center justify-center space-x-3">
-                <Zap className="w-5 h-5 md:w-7 md:h-7 fill-current text-amber-400" />
-                <span>BUY NOW</span>
-              </button>
             </form>
           </div>
         </div>
