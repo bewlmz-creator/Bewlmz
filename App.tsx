@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Checkout from './pages/Checkout';
 import Payment from './pages/Payment';
@@ -17,12 +17,14 @@ import AdminDashboard from './pages/AdminDashboard';
 import VaultDB from './db';
 import { supabase } from './lib/supabase';
 import { CartItem, Product } from './types';
-import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download, Play } from 'lucide-react';
+import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download, Play, ExternalLink } from 'lucide-react';
 
 const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   const [isVerified, setIsVerified] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const checkVerification = useCallback(async () => {
     const rawEmail = localStorage.getItem('last_customer_email');
@@ -85,6 +87,58 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
     };
   }, [checkVerification]);
 
+  const handlePlayVideo = async () => {
+    const email = localStorage.getItem('last_customer_email')?.toLowerCase().trim();
+    if (!email) return;
+
+    setIsLoadingLink(true);
+    try {
+      // Force sync to get latest data
+      await VaultDB.pullFromSupabase();
+      
+      const { data: verifiedOrders } = await supabase
+        .from('orders')
+        .select('product_ids, product')
+        .eq('email', email)
+        .eq('status', 'verified');
+
+      if (!verifiedOrders || verifiedOrders.length === 0) {
+        alert("Verification still in progress. Please wait 2-5 minutes.");
+        setIsLoadingLink(false);
+        return;
+      }
+
+      const products = VaultDB.getProducts();
+      let targetUrl = '';
+
+      // Find the first verified product's download URL
+      for (const order of verifiedOrders) {
+        const matchingProduct = products.find(p => 
+          order.product_ids?.includes(p.id) || 
+          order.product?.toLowerCase().includes(p.name.toLowerCase())
+        );
+        
+        if (matchingProduct && matchingProduct.downloadUrl && matchingProduct.downloadUrl !== '#') {
+          targetUrl = matchingProduct.downloadUrl;
+          break;
+        }
+      }
+
+      if (targetUrl) {
+        window.open(targetUrl, '_blank');
+      } else {
+        // Fallback to library page if direct link is missing or there are multiple items
+        navigate('/my-downloads');
+      }
+    } catch (error) {
+      console.error("Error redirecting to video:", error);
+      navigate('/my-downloads');
+    } finally {
+      setIsLoadingLink(false);
+      setIsMenuOpen(false);
+    }
+  };
+
   // Close menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
@@ -135,15 +189,14 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
           ))}
           
           {isVerified && (
-            <Link 
-              to="/my-downloads"
-              className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
-                isLinkActive('/my-downloads') ? 'bg-green-600 text-white' : 'bg-green-50 text-green-600 animate-pulse'
-              }`}
+            <button 
+              onClick={handlePlayVideo}
+              disabled={isLoadingLink}
+              className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all text-left bg-green-50 text-green-600 hover:bg-green-100 ${isLoadingLink ? 'opacity-50' : 'animate-pulse'}`}
             >
-              <Play className="w-5 h-5" />
-              Play Video
-            </Link>
+              {isLoadingLink ? <RefreshCcw className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+              {isLoadingLink ? 'Opening...' : 'Play Video'}
+            </button>
           )}
         </div>
         <div className="absolute bottom-6 left-6 right-6">
@@ -195,15 +248,14 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
 
           <div className="flex-1 flex justify-end items-center gap-2 md:gap-4">
             {isVerified && (
-              <Link 
-                to="/my-downloads" 
-                className={`flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest transition-all hover:bg-green-700 shadow-md ${
-                  isLinkActive('/my-downloads') ? 'bg-slate-900 text-white' : 'bg-green-600 text-white animate-bounce-slow'
-                }`}
+              <button 
+                onClick={handlePlayVideo}
+                disabled={isLoadingLink}
+                className={`flex items-center gap-1.5 px-3 md:px-4 py-2 md:py-2.5 rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest transition-all hover:bg-green-700 shadow-md bg-green-600 text-white ${isLoadingLink ? 'bg-slate-900' : 'animate-bounce-slow'}`}
               >
-                <Play className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                <span className="hidden xs:inline">Play Video</span>
-              </Link>
+                {isLoadingLink ? <RefreshCcw className="w-3 h-3 md:w-3.5 md:h-3.5 animate-spin" /> : <Play className="w-3 h-3 md:w-3.5 md:h-3.5" />}
+                <span className="hidden xs:inline">{isLoadingLink ? 'Opening...' : 'Play Video'}</span>
+              </button>
             )}
             
             <Link 
