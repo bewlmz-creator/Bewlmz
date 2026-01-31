@@ -17,7 +17,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import VaultDB from './db';
 import { supabase } from './lib/supabase';
 import { CartItem, Product } from './types';
-import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Download, Play, ExternalLink } from 'lucide-react';
+import { ShoppingCart, Sparkles, Menu, X, Home as HomeIcon, Info, Shield, RefreshCcw, Headset, Lock, Play } from 'lucide-react';
 
 const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   const [isVerified, setIsVerified] = useState(false);
@@ -34,14 +34,11 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
     }
     
     const email = rawEmail.toLowerCase().trim();
-    
-    // First check local storage for speed
     const orders = VaultDB.getOrders();
     let verified = orders.some((o: any) => 
       o.email?.toLowerCase().trim() === email && o.status === 'verified'
     );
     
-    // If not verified in local, double check fresh data from Supabase
     if (!verified) {
       const { data } = await supabase
         .from('orders')
@@ -49,9 +46,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
         .eq('email', email)
         .eq('status', 'verified');
       
-      if (data && data.length > 0) {
-        verified = true;
-      }
+      if (data && data.length > 0) verified = true;
     }
     
     setIsVerified(verified);
@@ -59,19 +54,17 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
 
   useEffect(() => {
     checkVerification();
-    
-    // Set up real-time listener for the navbar
     const email = localStorage.getItem('last_customer_email')?.toLowerCase().trim();
     let channel: any;
 
     if (email) {
       channel = supabase
-        .channel('navbar-verify-check')
+        .channel('navbar-realtime')
         .on('postgres_changes', 
           { event: 'UPDATE', schema: 'public', table: 'orders', filter: `email=eq.${email}` }, 
           async () => {
-            await VaultDB.pullFromSupabase(); // Sync database
-            checkVerification(); // Update navbar state
+            await VaultDB.pullFromSupabase();
+            checkVerification();
           }
         )
         .subscribe();
@@ -89,13 +82,15 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
 
   const handlePlayVideo = async () => {
     const email = localStorage.getItem('last_customer_email')?.toLowerCase().trim();
-    if (!email) return;
+    if (!email) {
+      navigate('/checkout');
+      return;
+    }
 
     setIsLoadingLink(true);
     try {
-      // Force sync to get latest data
       await VaultDB.pullFromSupabase();
-      
+      const products = VaultDB.getProducts();
       const { data: verifiedOrders } = await supabase
         .from('orders')
         .select('product_ids, product')
@@ -103,21 +98,16 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
         .eq('status', 'verified');
 
       if (!verifiedOrders || verifiedOrders.length === 0) {
-        alert("Verification still in progress. Please wait 2-5 minutes.");
-        setIsLoadingLink(false);
+        navigate('/my-downloads');
         return;
       }
 
-      const products = VaultDB.getProducts();
       let targetUrl = '';
-
-      // Find the first verified product's download URL
       for (const order of verifiedOrders) {
         const matchingProduct = products.find(p => 
           order.product_ids?.includes(p.id) || 
           order.product?.toLowerCase().includes(p.name.toLowerCase())
         );
-        
         if (matchingProduct && matchingProduct.downloadUrl && matchingProduct.downloadUrl !== '#') {
           targetUrl = matchingProduct.downloadUrl;
           break;
@@ -127,22 +117,15 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
       if (targetUrl) {
         window.open(targetUrl, '_blank');
       } else {
-        // Fallback to library page if direct link is missing or there are multiple items
         navigate('/my-downloads');
       }
     } catch (error) {
-      console.error("Error redirecting to video:", error);
       navigate('/my-downloads');
     } finally {
       setIsLoadingLink(false);
       setIsMenuOpen(false);
     }
   };
-
-  // Close menu when route changes
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
 
   const menuLinks = [
     { name: 'Home', short: 'Home', path: '/', icon: HomeIcon },
@@ -156,15 +139,13 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
   
   return (
     <>
-      {/* Drawer Overlay */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250] transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[250]"
           onClick={() => setIsMenuOpen(false)}
         />
       )}
 
-      {/* Side Drawer */}
       <div className={`fixed top-0 left-0 h-full w-[280px] bg-white z-[300] shadow-2xl transition-transform duration-300 transform ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 border-b border-slate-50 flex items-center justify-between">
           <span className="text-xl font-black text-indigo-600 uppercase italic">Menu</span>
@@ -211,31 +192,19 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between relative">
           
           <div className="flex-1 flex items-center">
-            <button 
-              onClick={() => setIsMenuOpen(true)}
-              className="p-2 md:hidden text-slate-700 hover:text-indigo-600 transition-colors"
-            >
+            <button onClick={() => setIsMenuOpen(true)} className="p-2 md:hidden text-slate-700 hover:text-indigo-600 transition-colors">
               <Menu className="w-7 h-7" />
             </button>
-
             <div className="hidden md:flex items-center gap-2">
               {menuLinks.map((link) => (
-                <Link 
-                  key={link.name} 
-                  to={link.path}
-                  className={`px-4 py-2 rounded-xl text-[11px] font-[900] uppercase tracking-tight transition-all whitespace-nowrap ${
-                    isLinkActive(link.path) 
-                      ? 'text-white bg-indigo-600 shadow-md scale-105' 
-                      : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'
-                  }`}
-                >
+                <Link key={link.name} to={link.path} className={`px-4 py-2 rounded-xl text-[11px] font-[900] uppercase tracking-tight transition-all ${isLinkActive(link.path) ? 'text-white bg-indigo-600 shadow-md scale-105' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'}`}>
                   {link.short}
                 </Link>
               ))}
             </div>
           </div>
 
-          <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto">
+          <div className="absolute left-1/2 -translate-x-1/2">
             <Link to="/" className="flex items-center space-x-1 md:space-x-2 group">
               <div className="bg-indigo-600 p-1 md:p-1.5 rounded-lg group-hover:rotate-12 transition-all shadow-md">
                 <Sparkles className="text-white w-3 h-3 md:w-5 md:h-5" />
@@ -258,20 +227,9 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
               </button>
             )}
             
-            <Link 
-              to="/checkout" 
-              className={`p-2.5 md:p-3 border rounded-xl relative transition-all active:scale-95 ${
-                isLinkActive('/checkout') 
-                  ? 'bg-indigo-600 text-white border-indigo-500' 
-                  : 'bg-white text-slate-700 border-slate-200'
-              }`}
-            >
+            <Link to="/checkout" className={`p-2.5 md:p-3 border rounded-xl relative transition-all active:scale-95 ${isLinkActive('/checkout') ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white text-slate-700 border-slate-200'}`}>
               <ShoppingCart className="w-5 h-5 md:w-6 md:h-6" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[8px] md:text-[10px] font-black h-4 w-4 md:h-5.5 md:w-5.5 flex items-center justify-center rounded-full ring-2 ring-white">
-                  {cartCount}
-                </span>
-              )}
+              {cartCount > 0 && <span className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[8px] md:text-[10px] font-black h-4 w-4 md:h-5.5 md:w-5.5 flex items-center justify-center rounded-full ring-2 ring-white">{cartCount}</span>}
             </Link>
           </div>
         </div>
@@ -282,7 +240,6 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
 
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
-  
   const addToCart = (product: Product) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
@@ -290,7 +247,6 @@ const App: React.FC = () => {
       return [...prev, { ...product, quantity: 1 }];
     });
   };
-  
   const removeFromCart = (id: string) => setCart(prev => prev.filter(item => item.id !== id));
   const clearCart = () => setCart([]);
 
@@ -323,9 +279,7 @@ const App: React.FC = () => {
                   <div className="bg-indigo-500 p-1.5 rounded-lg"><Sparkles className="text-white w-6 h-6" /></div>
                   <span className="text-2xl font-black text-white uppercase italic">bewlmz</span>
                 </div>
-                <p className="text-slate-400 text-sm md:text-lg leading-relaxed font-medium italic max-w-sm">
-                  Empowering you to start your first online business with proven blueprints.
-                </p>
+                <p className="text-slate-400 text-sm md:text-lg leading-relaxed font-medium italic max-w-sm">Empowering you to start your first online business with proven blueprints.</p>
               </div>
               <div className="grid grid-cols-2 gap-8 md:col-span-2">
                 <div className="space-y-4">
@@ -347,9 +301,7 @@ const App: React.FC = () => {
             <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-600 text-[10px] font-black uppercase tracking-widest">
               <span>&copy; {new Date().getFullYear()} bewlmz.</span>
               <div className="flex items-center gap-4">
-                <Link to="/admin-login" className="hover:text-white transition-colors flex items-center gap-1.5">
-                  <Lock className="w-3 h-3" /> Admin
-                </Link>
+                <Link to="/admin-login" className="hover:text-white transition-colors flex items-center gap-1.5"><Lock className="w-3 h-3" /> Admin</Link>
               </div>
             </div>
           </div>
