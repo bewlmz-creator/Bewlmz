@@ -23,10 +23,21 @@ class VaultDB {
 
   static async pullFromSupabase() {
     try {
-      // 1. Pull Products
+      // 1. Pull Products with proper mapping
       const { data: products } = await supabase.from('products').select('*');
       if (products && products.length > 0) {
-        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(products));
+        const mappedProducts = products.map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          description: p.description,
+          longDescription: p.long_description || p.longDescription, // Map snake_case to camelCase
+          features: p.features,
+          image: p.image,
+          category: p.category,
+          downloadUrl: p.download_url || p.downloadUrl // Map snake_case to camelCase
+        }));
+        localStorage.setItem(DB_KEYS.PRODUCTS, JSON.stringify(mappedProducts));
       }
 
       // 2. Pull Orders (Exclude proof_image from localStorage to avoid quota limits)
@@ -98,6 +109,7 @@ class VaultDB {
       this.sync();
       return true;
     } catch (e) {
+      console.error("Save Products Error:", e);
       return false;
     }
   }
