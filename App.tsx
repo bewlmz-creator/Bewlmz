@@ -158,6 +158,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
             <Link 
               key={link.name} 
               to={link.path}
+              onClick={() => setIsMenuOpen(false)}
               className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${
                 isLinkActive(link.path) 
                   ? 'bg-indigo-600 text-white shadow-lg' 
@@ -183,7 +184,7 @@ const Navbar: React.FC<{ cartCount: number }> = ({ cartCount }) => {
         <div className="absolute bottom-6 left-6 right-6">
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
             <Lock className="w-4 h-4 text-slate-300" />
-            <Link to="/admin-login" className="text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-indigo-600">Admin Portal</Link>
+            <Link to="/admin-login" onClick={() => setIsMenuOpen(false)} className="text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-indigo-600">Admin Portal</Link>
           </div>
         </div>
       </div>
@@ -279,14 +280,14 @@ const App: React.FC = () => {
                   <div className="bg-indigo-500 p-1.5 rounded-lg"><Sparkles className="text-white w-6 h-6" /></div>
                   <span className="text-2xl font-black text-white uppercase italic">bewlmz</span>
                 </div>
-                <p className="text-slate-400 text-sm md:text-lg leading-relaxed font-medium italic max-w-sm">Empowering you to start your first online business with proven blueprints.</p>
+                <p className="text-slate-400 text-sm md:text-lg leading-relaxed font-medium italic max-w-sm">Direct Learning Access Blueprint. Online business training simplified for you.</p>
               </div>
               <div className="grid grid-cols-2 gap-8 md:col-span-2">
                 <div className="space-y-4">
-                  <h4 className="text-white font-black uppercase tracking-widest text-[10px] opacity-40">Shop</h4>
+                  <h4 className="text-white font-black uppercase tracking-widest text-[10px] opacity-40">Quick Menu</h4>
                   <div className="flex flex-col space-y-2">
                     <Link to="/" className="text-slate-500 hover:text-indigo-400 text-xs font-bold transition-colors">Marketplace</Link>
-                    <Link to="/about" className="text-slate-500 hover:text-indigo-400 text-xs font-bold transition-colors">About Us</Link>
+                    <Link to="/contact" className="text-slate-500 hover:text-indigo-400 text-xs font-bold transition-colors">Contact Support</Link>
                   </div>
                 </div>
                 <div className="space-y-4">
@@ -299,7 +300,7 @@ const App: React.FC = () => {
               </div>
             </div>
             <div className="pt-8 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-4 text-slate-600 text-[10px] font-black uppercase tracking-widest">
-              <span>&copy; {new Date().getFullYear()} bewlmz.</span>
+              <span>&copy; {new Date().getFullYear()} bewlmz Digital.</span>
               <div className="flex items-center gap-4">
                 <Link to="/admin-login" className="hover:text-white transition-colors flex items-center gap-1.5"><Lock className="w-3 h-3" /> Admin</Link>
               </div>
