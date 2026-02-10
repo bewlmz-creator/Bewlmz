@@ -39,16 +39,6 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
     navigate('/payment-proof');
   };
 
-  const formatName = (name: string) => {
-    const parts = name.split(' ');
-    if (parts.length < 2) return name;
-    return (
-      <>
-        {parts[0]} <span className="text-indigo-600">{parts.slice(1).join(' ')}</span>
-      </>
-    );
-  };
-
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col items-center overflow-y-auto">
       <div className="w-full px-4 py-4 flex items-center justify-between border-b border-gray-100">
@@ -66,14 +56,8 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
       </div>
 
       <div className="flex-grow w-full max-w-xl mx-auto px-4 py-6 flex flex-col items-center">
-        <div className="text-center mb-6">
-          <h2 className="text-4xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter leading-none mb-1">
-            {formatName(config.recipient)}
-          </h2>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Official Recipient</p>
-        </div>
-
-        <div className="w-full aspect-square relative mb-8">
+        
+        <div className="w-full aspect-square relative mb-8 mt-4">
            <div className="absolute inset-0 bg-indigo-500/5 rounded-[3rem] blur-3xl"></div>
            <div className="relative w-full h-full bg-white border-8 border-slate-50 rounded-[3rem] shadow-2xl flex items-center justify-center p-6 md:p-10 overflow-hidden">
               {config.qr ? (
@@ -94,19 +78,22 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
            </div>
         </div>
 
-        <div className="bg-slate-900 text-white px-8 py-4 rounded-2xl flex items-center gap-4 shadow-xl mb-8">
-           <Smartphone className="w-6 h-6 text-indigo-400" />
-           <span className="text-2xl md:text-4xl font-black tracking-tighter">₹{total.toFixed(0)}</span>
-        </div>
-
-        <div className="w-full bg-amber-50 border-2 border-amber-200 rounded-[2rem] p-5 md:p-8 text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-2 text-amber-700">
-             <AlertCircle className="w-5 h-5" />
-             <span className="text-xs font-black uppercase tracking-widest">Instruction</span>
-          </div>
+        <div className="w-full bg-white border border-slate-200 rounded-[2rem] p-6 md:p-10 text-center mb-6 shadow-sm">
           <p className="text-sm md:text-lg font-bold text-slate-800 italic leading-relaxed whitespace-pre-wrap">
             {config.instructions}
           </p>
+        </div>
+
+        {/* Brand Logos Section */}
+        <div className="w-full flex flex-col items-center mb-10">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Accepting All UPI Apps</p>
+          <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-4 bg-slate-50 rounded-3xl border border-slate-100 shadow-inner">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-5 md:h-7 object-contain" />
+             <div className="h-6 w-[1px] bg-slate-200"></div>
+             <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/Phonepe_logo.svg" alt="PhonePe" className="h-5 md:h-7 object-contain" />
+             <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Google_Pay_%28GPay%29_Logo.svg" alt="GPay" className="h-4 md:h-6 object-contain" />
+             <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" alt="Paytm" className="h-3 md:h-5 object-contain" />
+          </div>
         </div>
 
         <button 
@@ -117,11 +104,7 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
           <span>PROCEED PAYMENT</span>
         </button>
 
-        <div className="flex items-center gap-8 opacity-30 grayscale pb-12">
-           <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-6" />
-           <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Google_Pay_%28GPay%29_Logo.svg" alt="GPay" className="h-4" />
-           <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" alt="Paytm" className="h-3" />
-        </div>
+        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest pb-12">100% Encrypted & Secure Transaction</p>
       </div>
     </div>
   );

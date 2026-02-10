@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartItem } from '../types';
-import { ShoppingBag, Zap, User, Mail, CheckCircle2, Trash2 } from 'lucide-react';
+import { ShoppingBag, Zap, User, Mail, Trash2, Phone } from 'lucide-react';
 
 interface Props {
   cart: CartItem[];
@@ -11,8 +11,10 @@ interface Props {
 
 const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,7 +22,11 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
     if (cart.length === 0) return;
     
     // Save user info for identification
-    localStorage.setItem('last_customer_name', name);
+    const fullName = `${firstName} ${lastName}`.trim();
+    localStorage.setItem('last_customer_name', fullName);
+    localStorage.setItem('last_customer_first_name', firstName);
+    localStorage.setItem('last_customer_last_name', lastName);
+    localStorage.setItem('last_customer_phone', phone);
     localStorage.setItem('last_customer_email', email.toLowerCase().trim());
     
     navigate('/payment');
@@ -43,7 +49,6 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
 
   return (
     <div className="max-w-7xl mx-auto py-8 md:py-12 px-4">
-      <h1 className="text-2xl md:text-4xl font-black mb-8 md:mb-12 uppercase tracking-tighter">Instant App Access</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
@@ -74,22 +79,40 @@ const Checkout: React.FC<Props> = ({ cart, removeFromCart }) => {
             <h2 className="font-black text-xl mb-6 text-gray-900 uppercase tracking-wide">Identity Details</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
-                <p className="text-[10px] font-bold text-slate-400 uppercase italic">Isi email se aapka video app mein unlock hoga.</p>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Full Name</label>
-                  <div className="relative">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input required type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">First Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input required type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="John" className="w-full pl-10 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Last Name</label>
+                    <div className="relative">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input required type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Doe" className="w-full pl-10 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm" />
+                    </div>
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Access Email (Key)</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Phone Number</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 00000 00000" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                 </div>
               </div>
+
               <div className="border-t border-gray-100 pt-6">
                 <div className="flex justify-between text-2xl font-black text-gray-900 pb-6">
                   <span>Total</span>

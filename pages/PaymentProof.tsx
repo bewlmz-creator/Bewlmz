@@ -47,7 +47,6 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
         let width = img.width;
         let height = img.height;
         
-        // Use a smaller max dimension (800) for high compatibility with Instagram/Mobile browsers
         const maxDim = 800;
         if (width > height) {
           if (width > maxDim) {
@@ -67,7 +66,6 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
         
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
-          // Higher compression (0.4) to ensure the payload is small and stable
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.4);
           setProofBase64(compressedBase64);
         }
@@ -109,7 +107,7 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Photo upload fail ho gaya. Instagram browser mein memory limit ho sakti hai. Kripya image thoda crop karke ya chota karke phir se koshish karein.");
+      alert("Photo upload fail ho gaya. Koshish karein image thoda crop karke.");
       setIsVerifying(false);
     }
   };
@@ -118,18 +116,8 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
     <div className="max-w-4xl mx-auto py-8 md:py-16 px-4 animate-in fade-in duration-500">
       <div className="bg-white rounded-[2.5rem] md:rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden">
         
-        <div className="p-8 md:p-12 text-center bg-slate-50 border-b border-slate-100">
-          <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-amber-100 rounded-3xl mb-4 shadow-sm">
-            <FileText className="w-8 h-8 md:w-10 md:h-10 text-amber-600" />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 uppercase tracking-tighter">Confirm Payment</h1>
-          <div className="flex flex-col items-center gap-1">
-            <p className="text-[10px] md:text-xs text-slate-400 font-black uppercase tracking-widest">Enrollment Fee</p>
-            <p className="text-2xl md:text-3xl font-black text-indigo-600 tracking-tight">₹{total.toFixed(0)}</p>
-          </div>
-        </div>
-
         <div className="p-8 md:p-12 space-y-8">
+           {/* Visual Upload Area */}
            <div className={`relative border-4 border-dashed rounded-[3rem] p-10 md:p-16 flex flex-col items-center justify-center text-center transition-all duration-300 ${proofBase64 ? 'border-green-400 bg-green-50/50' : 'border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30'}`}>
               {!proofBase64 && !isProcessing ? (
                 <>
@@ -184,12 +172,12 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
                 {isVerifying ? (
                   <>
                     <Loader2 className="w-6 h-6 md:w-8 md:h-8 animate-spin" />
-                    <span>Processing Enrollment...</span>
+                    <span>Uploading...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-6 h-6 md:w-8 md:h-8 text-amber-400 fill-current" />
-                    <span>ENROLL NOW</span>
+                    <span>PROOF</span>
                   </>
                 )}
               </button>
