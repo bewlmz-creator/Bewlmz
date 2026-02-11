@@ -42,7 +42,7 @@ class VaultDB {
 
       // 2. Pull Orders (Exclude proof_image from localStorage to avoid quota limits)
       const { data: orders } = await supabase.from('orders')
-        .select('id, name, email, phone, product, product_ids, amount, date, status, created_at')
+        .select('id, name, email, product, product_ids, amount, date, status, created_at')
         .order('created_at', { ascending: false });
       
       if (orders) {
@@ -125,7 +125,6 @@ class VaultDB {
         id: order.id,
         name: order.name,
         email: order.email?.toLowerCase().trim(),
-        phone: order.phone,
         product: order.product,
         product_ids: Array.isArray(order.productIds) ? order.productIds : [order.productIds],
         amount: order.amount,

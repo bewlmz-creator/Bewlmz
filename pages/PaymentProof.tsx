@@ -89,7 +89,6 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
         id: 'ORD-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
         name: localStorage.getItem('last_customer_name') || 'Customer',
         email: localStorage.getItem('last_customer_email') || 'N/A',
-        phone: localStorage.getItem('last_customer_phone') || 'N/A',
         product: cart.map(item => item.name).join(', '),
         productIds: cart.map(item => item.id),
         amount: total,
@@ -118,19 +117,15 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
       <div className="bg-white rounded-[2.5rem] md:rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden">
         
         <div className="p-8 md:p-12 space-y-8">
-           {/* Seamless Upload Area - Removed heavy box styling */}
-           <div className="relative w-full flex flex-col items-center justify-center text-center transition-all duration-300 py-10">
-              
-              {/* Subtle background glow */}
-              <div className="absolute inset-0 bg-indigo-500/[0.02] rounded-full blur-3xl pointer-events-none"></div>
-
+           {/* Visual Upload Area */}
+           <div className={`relative border-4 border-dashed rounded-[3rem] p-10 md:p-16 flex flex-col items-center justify-center text-center transition-all duration-300 ${proofBase64 ? 'border-green-400 bg-green-50/50' : 'border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30'}`}>
               {!proofBase64 && !isProcessing ? (
-                <div className="relative group cursor-pointer flex flex-col items-center">
-                  <div className="bg-slate-50 p-8 md:p-12 rounded-full mb-6 border border-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                    <Upload className="w-10 h-10 md:w-12 md:h-12" />
+                <>
+                  <div className="bg-indigo-100 p-6 rounded-full mb-6">
+                    <Upload className="w-8 h-8 md:w-10 md:h-10 text-indigo-600" />
                   </div>
                   <div className="space-y-2">
-                    <p className="font-[1000] uppercase text-sm md:text-xl text-slate-900 tracking-tight">Tap to Upload Screenshot</p>
+                    <p className="font-black uppercase text-sm md:text-lg text-slate-900 tracking-tight">Tap to Upload Screenshot</p>
                     <p className="font-bold text-[10px] md:text-xs text-slate-400 uppercase tracking-widest">Select your payment proof</p>
                   </div>
                   <input 
@@ -139,59 +134,56 @@ const PaymentProof: React.FC<Props> = ({ cart, clearCart }) => {
                     onChange={handleFileUpload} 
                     className="absolute inset-0 opacity-0 cursor-pointer" 
                   />
-                </div>
+                </>
               ) : isProcessing ? (
-                <div className="space-y-4 py-8 relative">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-indigo-500 rounded-full blur-xl opacity-20 animate-pulse"></div>
-                    <Loader2 className="w-16 h-16 text-indigo-600 animate-spin mx-auto relative" />
-                  </div>
-                  <p className="font-black uppercase text-xs tracking-[0.3em] text-indigo-600 animate-pulse">Optimizing Proof...</p>
+                <div className="space-y-4 py-4">
+                  <Loader2 className="w-12 h-12 text-indigo-600 animate-spin mx-auto" />
+                  <p className="font-black uppercase text-xs tracking-widest text-indigo-600 animate-pulse">Optimizing Proof...</p>
                 </div>
               ) : (
-                <div className="space-y-8 animate-in zoom-in duration-300 relative">
+                <div className="space-y-6 animate-in zoom-in duration-300">
                   <div className="relative inline-block">
                     <img 
                       src={proofBase64!} 
-                      className="w-48 md:w-80 h-auto rounded-3xl shadow-2xl border-8 border-white" 
+                      className="w-40 md:w-64 h-auto rounded-2xl shadow-xl border-4 border-white" 
                       alt="Proof Preview"
                     />
                     <button 
                       onClick={() => { setProofBase64(null); setSelectedFile(null); }}
-                      className="absolute -top-4 -right-4 bg-red-500 text-white p-2.5 rounded-full shadow-lg hover:bg-slate-900 transition-colors border-2 border-white"
+                      className="absolute -top-4 -right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors"
                     >
                       <X className="w-5 h-5" />
                     </button>
                   </div>
-                  <div className="flex items-center justify-center gap-3 text-green-600 bg-green-50 px-6 py-2 rounded-full border border-green-100 mx-auto w-fit">
-                    <CheckCircle2 className="w-5 h-5" />
-                    <p className="font-black uppercase text-[10px] tracking-widest">Screenshot Received</p>
+                  <div className="flex items-center justify-center gap-2 text-green-600">
+                    <CheckCircle2 className="w-6 h-6" />
+                    <p className="font-black uppercase text-xs tracking-widest">Screenshot Received</p>
                   </div>
                 </div>
               )}
            </div>
 
-           <div className="space-y-4 pt-4">
+           <div className="space-y-4">
               <button 
                 onClick={handleSubmitProof}
                 disabled={!proofBase64 || isVerifying || isProcessing}
-                className={`w-full py-6 md:py-10 rounded-3xl md:rounded-[2.5rem] font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all duration-300 text-base md:text-3xl ${isVerifying ? 'bg-slate-800 cursor-not-allowed' : proofBase64 ? 'bg-blue-600 hover:bg-slate-900 shadow-2xl shadow-blue-500/30 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'}`}
+                className={`w-full py-6 md:py-8 rounded-3xl font-black text-white uppercase tracking-[0.2em] flex items-center justify-center gap-4 transition-all duration-300 text-sm md:text-xl ${isVerifying ? 'bg-indigo-400 cursor-not-allowed' : proofBase64 ? 'bg-blue-600 hover:bg-slate-900 shadow-2xl shadow-blue-200 active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
               >
                 {isVerifying ? (
                   <>
-                    <Loader2 className="w-6 h-6 md:w-10 md:h-10 animate-spin" />
+                    <Loader2 className="w-6 h-6 md:w-8 md:h-8 animate-spin" />
                     <span>Uploading...</span>
                   </>
                 ) : (
                   <>
-                    <Zap className="w-6 h-6 md:w-10 md:h-10 text-amber-400 fill-current animate-pulse" />
-                    <span>SEND PROOF</span>
+                    <Zap className="w-6 h-6 md:w-8 md:h-8 text-amber-400 fill-current" />
+                    <span>PROOF</span>
                   </>
                 )}
               </button>
               
               <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   <AlertCircle className="w-3.5 h-3.5" />
                   <span>Stay on this page until upload finishes</span>
                 </div>
