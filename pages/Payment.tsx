@@ -57,14 +57,15 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
 
       <div className="flex-grow w-full max-w-xl mx-auto px-4 py-6 flex flex-col items-center">
         
-        <div className="w-full aspect-square relative mb-8 mt-4">
-           <div className="absolute inset-0 bg-indigo-500/5 rounded-[3rem] blur-3xl"></div>
-           <div className="relative w-full h-full bg-white border-8 border-slate-50 rounded-[3rem] shadow-2xl flex items-center justify-center p-6 md:p-10 overflow-hidden">
+        {/* Simplified QR Container - No borders or shadows to avoid "box" look */}
+        <div className="w-full aspect-square relative mb-8 mt-4 flex items-center justify-center">
+           <div className="absolute inset-0 bg-indigo-500/[0.03] rounded-full blur-3xl"></div>
+           <div className="relative w-full max-w-[320px] md:max-w-[400px] h-full flex items-center justify-center p-4">
               {config.qr ? (
                 <img 
                   src={config.qr} 
                   alt="Payment QR" 
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain mix-blend-multiply"
                   onError={(e) => {
                     console.error("QR Load failed");
                   }}
@@ -78,7 +79,7 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
            </div>
         </div>
 
-        <div className="w-full bg-white border border-slate-200 rounded-[2rem] p-6 md:p-10 text-center mb-10 shadow-sm">
+        <div className="w-full bg-slate-50 border border-slate-100 rounded-[2rem] p-6 md:p-10 text-center mb-10">
           <p className="text-sm md:text-lg font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">
             {config.instructions}
           </p>

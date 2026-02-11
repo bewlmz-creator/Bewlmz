@@ -20,7 +20,8 @@ import {
   Loader2,
   Check,
   Zap,
-  Globe
+  Globe,
+  Phone
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -40,7 +41,7 @@ const AdminDashboard: React.FC = () => {
   const fetchLiveData = useCallback(async (showLoader = true) => {
     if (showLoader) setIsLoading(true);
     
-    // Fetch orders directly from Supabase including the proof image
+    // Fetch orders directly from Supabase including the proof image and phone
     const { data: dbOrders } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (dbOrders) setOrders(dbOrders);
 
@@ -170,7 +171,14 @@ const AdminDashboard: React.FC = () => {
                       <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100"><User className="w-6 h-6 text-slate-300" /></div>
                       <div className="space-y-1">
                         <p className="font-black text-slate-900 uppercase text-lg">{order.name}</p>
-                        <p className="text-xs text-slate-500 font-bold">{order.email} • <span className="text-indigo-600">₹{order.amount}</span></p>
+                        <div className="flex flex-col gap-0.5">
+                          <p className="text-xs text-slate-500 font-bold">{order.email}</p>
+                          <p className="text-[10px] md:text-xs text-indigo-600 font-black flex items-center gap-1.5">
+                            <Phone className="w-3 h-3" />
+                            {order.phone || 'N/A'}
+                          </p>
+                          <p className="text-xs text-slate-900 font-black">₹{order.amount}</p>
+                        </div>
                         <div className="flex items-center gap-2 pt-1">
                           <span className={`text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest ${order.status === 'verified' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>{order.status}</span>
                           <span className="text-[9px] text-slate-300 font-bold uppercase">{order.date}</span>
