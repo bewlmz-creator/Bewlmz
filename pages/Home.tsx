@@ -42,9 +42,9 @@ const Home: React.FC<Props> = ({ addToCart }) => {
 
   return (
     <div className="animate-in fade-in duration-500 overflow-x-hidden w-full bg-white min-h-screen flex flex-col">
-      {/* Banner Section - Taller aspect ratio for bigger presence */}
+      {/* Banner Section - Updated aspect ratio to 16:9 */}
       <section className="relative w-full shadow-sm">
-        <div className="w-full aspect-[4/3] md:aspect-[12/6] relative overflow-hidden flex items-center justify-center bg-slate-50">
+        <div className="w-full aspect-[16/9] relative overflow-hidden flex items-center justify-center bg-slate-50">
           <img 
             src={banner} 
             alt="Hero Banner"
@@ -97,14 +97,14 @@ const Home: React.FC<Props> = ({ addToCart }) => {
         </div>
       </section>
 
-      {/* UPDATED: Contact Support Box (White Background) */}
+      {/* UPDATED: Contact Support Box (White Background with requested text, removed italic for 'sidha' look) */}
       <div className="py-8 px-4 mb-10">
         <div className="max-w-4xl mx-auto rounded-3xl md:rounded-[4rem] p-8 md:p-20 bg-white text-center border border-indigo-100 flex flex-col items-center gap-6 shadow-2xl shadow-indigo-100/50 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl"></div>
-          <h3 className="text-xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter italic relative z-10">
-            Join Our <span className="text-indigo-600">Success</span> Community
+          <h3 className="text-xl md:text-5xl font-[1000] text-slate-900 uppercase tracking-tighter relative z-10 leading-tight">
+            Koi bhi sawal ho to <br className="hidden md:block" /> <span className="text-indigo-600">puchha sakte hai</span>
           </h3>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] md:text-xs relative z-10">Need help? Our team is available 24/7 via Email.</p>
+          <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px] md:text-xs relative z-10">Humari team aapki madad ke liye 24/7 taiyar hai.</p>
           <Link 
             to="/contact" 
             className="px-6 py-3.5 md:px-12 md:py-6 bg-indigo-600 text-white rounded-xl md:rounded-[2rem] font-black uppercase text-[10px] md:text-lg tracking-[0.2em] shadow-xl shadow-indigo-200 hover:bg-slate-900 active:scale-95 transition-all relative z-10"

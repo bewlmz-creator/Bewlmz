@@ -78,22 +78,10 @@ const Payment: React.FC<Props> = ({ cart, clearCart }) => {
            </div>
         </div>
 
-        <div className="w-full bg-white border border-slate-200 rounded-[2rem] p-6 md:p-10 text-center mb-6 shadow-sm">
-          <p className="text-sm md:text-lg font-bold text-slate-800 italic leading-relaxed whitespace-pre-wrap">
+        <div className="w-full bg-white border border-slate-200 rounded-[2rem] p-6 md:p-10 text-center mb-10 shadow-sm">
+          <p className="text-sm md:text-lg font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">
             {config.instructions}
           </p>
-        </div>
-
-        {/* Brand Logos Section */}
-        <div className="w-full flex flex-col items-center mb-10">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Accepting All UPI Apps</p>
-          <div className="flex items-center justify-center gap-6 md:gap-10 px-6 py-4 bg-slate-50 rounded-3xl border border-slate-100 shadow-inner">
-             <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/UPI-Logo.png" alt="UPI" className="h-5 md:h-7 object-contain" />
-             <div className="h-6 w-[1px] bg-slate-200"></div>
-             <img src="https://upload.wikimedia.org/wikipedia/commons/7/71/Phonepe_logo.svg" alt="PhonePe" className="h-5 md:h-7 object-contain" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Google_Pay_%28GPay%29_Logo.svg" alt="GPay" className="h-4 md:h-6 object-contain" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Paytm_Logo_%28standalone%29.svg" alt="Paytm" className="h-3 md:h-5 object-contain" />
-          </div>
         </div>
 
         <button 

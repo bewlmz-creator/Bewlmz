@@ -54,9 +54,9 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
 
   const renderFeatureText = (text: string) => {
     const parts = text.split(':');
-    if (parts.length < 2) return <span className="text-lg md:text-2xl font-bold text-slate-700">{text}</span>;
+    if (parts.length < 2) return <span className="text-xs md:text-sm font-bold text-slate-700">{text}</span>;
     return (
-      <span className="text-lg md:text-3xl font-black text-slate-800 uppercase tracking-tight">
+      <span className="text-[10px] md:text-sm font-black text-slate-800 uppercase tracking-tight">
         {parts[0]} : <span className="text-indigo-600">{parts[1]}</span>
       </span>
     );
@@ -126,7 +126,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                 {product.name.split(' ')[0]} <br/>
                 <span className="text-indigo-600">{product.name.split(' ')[1] || ''}</span>
               </h1>
-              <p className="text-base md:text-3xl font-bold text-slate-400 italic tracking-tight leading-tight max-w-xl">
+              <p className="text-base md:text-3xl font-bold text-slate-400 tracking-tight leading-tight max-w-xl">
                 "{product.description}"
               </p>
             </div>
@@ -140,15 +140,15 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
                 </div>
               </div>
 
-              <div className="w-full space-y-4 md:space-y-8">
+              {/* Updated: Features in a single line (flex row wrap) */}
+              <div className="w-full flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-4 border-y border-slate-200">
                 {product.features?.map((feature, idx) => (
-                  <div key={idx} className="flex items-center justify-center space-x-4 md:space-x-8 py-4 md:py-6 border-b border-slate-200 last:border-0">
-                     <div className="bg-indigo-600 rounded-full p-1.5 shadow-md shrink-0">
-                        <CheckCircle2 className="w-4 h-4 md:w-8 md:h-8 text-white" />
-                     </div>
-                     <div className="text-left">
-                        {renderFeatureText(feature)}
-                     </div>
+                  <div key={idx} className="flex items-center gap-1.5 whitespace-nowrap">
+                     <CheckCircle2 className="w-3 h-3 md:w-4 md:h-4 text-indigo-600 shrink-0" />
+                     {renderFeatureText(feature)}
+                     {idx < (product.features?.length || 0) - 1 && (
+                       <span className="ml-2 text-slate-300 hidden md:block">|</span>
+                     )}
                   </div>
                 ))}
               </div>
@@ -168,7 +168,7 @@ const ProductDetails: React.FC<Props> = ({ addToCart }) => {
               <h3 className="text-2xl md:text-4xl font-black text-slate-900 uppercase tracking-tighter">
                 Start Today & Earn <br className="md:hidden" /> Upto 3 lakh/Month
               </h3>
-              <p className="text-sm md:text-xl text-slate-600 leading-relaxed font-medium max-w-2xl italic">
+              <p className="text-sm md:text-xl text-slate-600 leading-relaxed font-medium max-w-2xl">
                 {product.longDescription}
               </p>
             </div>
