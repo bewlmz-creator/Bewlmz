@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Mail, User, Send, Clock, Sparkles, Play, MessageSquare } from 'lucide-react';
+import { Mail, User, Send, Clock, Sparkles, Play, MessageSquare, ShieldCheck } from 'lucide-react';
 
 const Contact: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -125,7 +125,7 @@ const Contact: React.FC = () => {
                 <Play className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
-                <h3 className="text-lg font-black uppercase italic tracking-tight">App Delivery</h3>
+                <h3 className="text-lg font-black uppercase italic tracking-tight text-slate-900">App Delivery</h3>
                 <p className="text-gray-500 font-bold text-sm">Courses app mein unlock hote hain.</p>
               </div>
             </div>
@@ -135,23 +135,27 @@ const Contact: React.FC = () => {
                 <Clock className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-lg font-black uppercase italic tracking-tight">Response Time</h3>
+                <h3 className="text-lg font-black uppercase italic tracking-tight text-slate-900">Response Time</h3>
                 <p className="text-gray-500 font-bold text-sm">Under 24 Working Hours</p>
               </div>
             </div>
 
-            <div className="flex-grow bg-slate-900 rounded-[2.5rem] p-10 text-white flex flex-col justify-center space-y-6 relative overflow-hidden border border-white/5">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl"></div>
-               <div className="space-y-2">
-                 <h4 className="text-2xl font-black uppercase italic tracking-widest">24/7 Monitoring</h4>
-                 <p className="text-indigo-100/60 text-sm font-bold italic">
+            {/* UPDATED: Info Card to White Background */}
+            <div className="flex-grow bg-white rounded-[2.5rem] p-10 text-slate-900 flex flex-col justify-center space-y-6 relative overflow-hidden border border-indigo-100 shadow-xl shadow-indigo-50">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl"></div>
+               <div className="space-y-2 relative z-10">
+                 <div className="flex items-center gap-2 mb-2">
+                    <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                    <h4 className="text-2xl font-black uppercase italic tracking-widest">24/7 Monitoring</h4>
+                 </div>
+                 <p className="text-slate-500 text-sm font-bold italic">
                    Aapka access humesha secure hai aur bina manual intervention ke unlock hota hai.
                  </p>
                </div>
                
-               <div className="pt-4 border-t border-white/10">
-                 <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-2">Direct Email</p>
-                 <p className="text-lg md:text-xl font-black">{EMAIL_ADDRESS}</p>
+               <div className="pt-4 border-t border-slate-100 relative z-10">
+                 <p className="text-[10px] font-black text-indigo-600 uppercase tracking-[0.4em] mb-2">Direct Email</p>
+                 <p className="text-lg md:text-xl font-black text-slate-900">{EMAIL_ADDRESS}</p>
                </div>
             </div>
           </div>
